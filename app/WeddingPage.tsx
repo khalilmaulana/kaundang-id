@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { supabase } from './lib/supabase'
 
 export default function WeddingPage() {
   const [envelopeOpen, setEnvelopeOpen] = useState(false)
@@ -32,10 +33,30 @@ export default function WeddingPage() {
     setEnvelopeOpen(true)
   }
 
-  const handleRSVPSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    alert('Terima kasih sudah konfirmasi! 🎉')
+  const handleRSVPSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  
+  const form = e.target as HTMLFormElement
+  const formData = new FormData(form)
+  
+  const { data, error } = await supabase
+    .from('rsvp')
+    .insert([
+      {
+        name: formData.get('name') as string,
+        phone: formData.get('phone') as string,
+        attendance: selectedAttend,
+        guest_count: parseInt(formData.get('guest_count') as string)
+      }
+    ])
+  
+  if (error) {
+    alert('Error: ' + error.message)
+  } else {
+    alert('Terima kasih sudah konfirmasi! Data tersimpan 🎉')
+    form.reset()
   }
+}
 
   if (!envelopeOpen) {
     return (
@@ -1008,7 +1029,28 @@ export default function WeddingPage() {
             }}>
               Nama Lengkap
             </label>
-            <input type="text" required style={{
+            <input type="text" name="name" required style={{
+              width: '100%',
+              padding: '0.9rem 1.2rem',
+              border: '1px solid rgba(201,165,87,0.2)',
+              fontFamily: "'Jost', sans-serif",
+              fontSize: '0.9rem',
+              outline: 'none'
+            }} />
+          </div>
+          
+          <div style={{ marginBottom: '1.5rem', textAlign: 'left' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '0.68rem',
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase',
+              color: 'var(--muted)',
+              marginBottom: '0.5rem'
+            }}>
+              Nomor HP
+            </label>
+            <input type="tel" name="phone" style={{
               width: '100%',
               padding: '0.9rem 1.2rem',
               border: '1px solid rgba(201,165,87,0.2)',
@@ -1050,6 +1092,33 @@ export default function WeddingPage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          <div style={{ marginBottom: '1.5rem', textAlign: 'left' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '0.68rem',
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase',
+              color: 'var(--muted)',
+              marginBottom: '0.5rem'
+            }}>
+              Jumlah Tamu
+            </label>
+            <select name="guest_count" style={{
+              width: '100%',
+              padding: '0.9rem 1.2rem',
+              border: '1px solid rgba(201,165,87,0.2)',
+              fontFamily: "'Jost', sans-serif",
+              fontSize: '0.9rem',
+              outline: 'none',
+              background: '#fff'
+            }}>
+              <option value="1">1 orang</option>
+              <option value="2">2 orang</option>
+              <option value="3">3 orang</option>
+              <option value="4">4 orang</option>
+            </select>
           </div>
           
           <button type="submit" style={{
