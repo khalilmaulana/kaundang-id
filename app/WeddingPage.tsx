@@ -3,6 +3,9 @@ import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 
 export default function WeddingPage() {
+  const [wishes, setWishes] = useState<any[]>([])
+  const [wishName, setWishName] = useState('')
+  const [wishMessage, setWishMessage] = useState('')
   const [envelopeOpen, setEnvelopeOpen] = useState(false)
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, mins: 0, secs: 0 })
   const [selectedAttend, setSelectedAttend] = useState('Hadir')
@@ -28,6 +31,43 @@ export default function WeddingPage() {
     
     return () => clearInterval(timer)
   }, [])
+
+  useEffect(() => {
+    fetchWishes()
+  }, [])
+
+  const fetchWishes = async () => {
+    const { data, error } = await supabase
+      .from('wishes')
+      .select('*')
+      .order('created_at', { ascending: false })
+    
+    if (data) {
+      setWishes(data)
+    }
+  }
+
+  const handleWishSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    const { data, error } = await supabase
+      .from('wishes')
+      .insert([
+        {
+          name: wishName,
+          message: wishMessage
+        }
+      ])
+    
+    if (error) {
+      alert('Error: ' + error.message)
+    } else {
+      alert('Ucapan berhasil dikirim! 🎉')
+      setWishName('')
+      setWishMessage('')
+      fetchWishes()
+    }
+  }
 
   const handleEnvelopeClick = () => {
     setEnvelopeOpen(true)
@@ -781,11 +821,91 @@ export default function WeddingPage() {
           fontSize: 'clamp(2rem, 4vw, 3rem)',
           fontWeight: 400,
           color: 'var(--dark)',
-          marginBottom: '3rem'
+          marginBottom: '2rem'
         }}>
           Ucapan Selamat
         </h2>
         
+        {/* Form Ucapan */}
+        <form onSubmit={handleWishSubmit} style={{
+          maxWidth: '600px',
+          margin: '0 auto 3rem',
+          background: '#fff',
+          padding: '2rem',
+          border: '1px solid rgba(201,165,87,0.15)'
+        }}>
+          <div style={{ marginBottom: '1rem', textAlign: 'left' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '0.72rem',
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: 'var(--muted)',
+              marginBottom: '0.5rem'
+            }}>
+              Nama
+            </label>
+            <input 
+              type="text" 
+              value={wishName}
+              onChange={(e) => setWishName(e.target.value)}
+              required
+              style={{
+                width: '100%',
+                padding: '0.8rem 1rem',
+                border: '1px solid rgba(201,165,87,0.2)',
+                fontFamily: "'Jost', sans-serif",
+                fontSize: '0.9rem',
+                outline: 'none'
+              }} 
+            />
+          </div>
+          
+          <div style={{ marginBottom: '1.5rem', textAlign: 'left' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '0.72rem',
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: 'var(--muted)',
+              marginBottom: '0.5rem'
+            }}>
+              Ucapan & Doa
+            </label>
+            <textarea 
+              value={wishMessage}
+              onChange={(e) => setWishMessage(e.target.value)}
+              required
+              rows={4}
+              style={{
+                width: '100%',
+                padding: '0.8rem 1rem',
+                border: '1px solid rgba(201,165,87,0.2)',
+                fontFamily: "'Jost', sans-serif",
+                fontSize: '0.9rem',
+                outline: 'none',
+                resize: 'vertical'
+              }} 
+            />
+          </div>
+          
+          <button type="submit" style={{
+            width: '100%',
+            padding: '0.8rem',
+            background: 'var(--gold)',
+            border: 'none',
+            color: '#fff',
+            fontFamily: "'Jost', sans-serif",
+            fontSize: '0.8rem',
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase',
+            cursor: 'pointer'
+          }}>
+            Kirim Ucapan
+          </button>
+        </form>
+        
+        {/* List Ucapan */}
         <div style={{
           maxWidth: '600px',
           margin: '0 auto',
@@ -793,43 +913,45 @@ export default function WeddingPage() {
           flexDirection: 'column',
           gap: '1.5rem'
         }}>
-          {[
-            { name: 'Anisa Ramadhani', text: 'Selamat menempuh hidup baru, semoga menjadi keluarga yang sakinah mawaddah warahmah. Barakallahu lakuma! 💕', date: '10 Februari 2025' },
-            { name: 'Budi Santoso & Keluarga', text: 'Doa terbaik untuk kalian berdua. Semoga pernikahan ini menjadi awal yang indah dari perjalanan panjang yang penuh berkah.', date: '11 Februari 2025' },
-            { name: 'Tim Kantor PT. Maju Bersama', text: 'Selamat berbahagia! Semoga keluarga baru kalian selalu dilimpahi kebahagiaan, kesehatan, dan rezeki yang berlimpah. 🌸', date: '12 Februari 2025' }
-          ].map((wish, i) => (
-            <div key={i} style={{
-              background: '#fff',
-              border: '1px solid rgba(201,165,87,0.15)',
-              padding: '1.8rem',
-              textAlign: 'left',
-              position: 'relative'
-            }}>
-              <div style={{
-                fontWeight: 500,
-                color: 'var(--gold3)',
-                fontSize: '0.85rem',
-                letterSpacing: '0.05em',
-                marginBottom: '0.5rem'
+          {wishes.length > 0 ? (
+            wishes.map((wish) => (
+              <div key={wish.id} style={{
+                background: '#fff',
+                border: '1px solid rgba(201,165,87,0.15)',
+                padding: '1.8rem',
+                textAlign: 'left',
+                position: 'relative'
               }}>
-                {wish.name}
+                <div style={{
+                  fontWeight: 500,
+                  color: 'var(--gold3)',
+                  fontSize: '0.85rem',
+                  letterSpacing: '0.05em',
+                  marginBottom: '0.5rem'
+                }}>
+                  {wish.name}
+                </div>
+                <div style={{
+                  fontSize: '0.9rem',
+                  color: 'var(--muted)',
+                  lineHeight: 1.8
+                }}>
+                  {wish.message}
+                </div>
+                <div style={{
+                  fontSize: '0.7rem',
+                  color: 'rgba(201,165,87,0.5)',
+                  marginTop: '0.8rem'
+                }}>
+                  {new Date(wish.created_at).toLocaleDateString('id-ID')}
+                </div>
               </div>
-              <div style={{
-                fontSize: '0.9rem',
-                color: 'var(--muted)',
-                lineHeight: 1.8
-              }}>
-                {wish.text}
-              </div>
-              <div style={{
-                fontSize: '0.7rem',
-                color: 'rgba(201,165,87,0.5)',
-                marginTop: '0.8rem'
-              }}>
-                {wish.date}
-              </div>
+            ))
+          ) : (
+            <div style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>
+              Belum ada ucapan. Jadilah yang pertama! 💝
             </div>
-          ))}
+          )}
         </div>
       </section>
 
