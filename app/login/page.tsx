@@ -25,7 +25,7 @@ export default function Login() {
       setError(error.message)
       setLoading(false)
     } else {
-      router.push('/create-invitation')
+      router.push('/my-invitations')
     }
   }
 
