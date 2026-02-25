@@ -346,16 +346,97 @@ export default function MyInvitations() {
                     Dashboard & Statistik
                   </Link>
 
+                  {/* NEW: Copy Link Button */}
+                  <button
+                    onClick={() => {
+                      const link = `${window.location.origin}/undangan/${inv.slug}`
+                      navigator.clipboard.writeText(link)
+                      alert('Link berhasil disalin! 📋')
+                    }}
+                    style={{
+                      padding: '0.8rem',
+                      background: 'transparent',
+                      border: '1px solid rgba(201,165,87,0.3)',
+                      color: '#666',
+                      textAlign: 'center',
+                      fontSize: '0.85rem',
+                      fontWeight: 500,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    📋 Salin Link
+                  </button>
+
+                  {/* NEW: WhatsApp Share */}
+                  <a 
+                  href={`https://wa.me/?text=Hai! Kami mengundang kamu ke pernikahan kami. Lihat undangannya di: ${window.location.origin}/undangan/${inv.slug}`}
+                  target="_blank"
+                  style={{
+                  padding: '0.8rem',
+                  background: '#25D366',
+                  color: '#fff',
+                  textAlign: 'center',
+                  textDecoration: 'none',
+                  fontSize: '0.85rem',
+                  fontWeight: 500
+                  }}
+                  >
+                  💬 Share via WhatsApp
+                  </a>
+
+                  {/* NEW: Edit & Delete */}
                   <div style={{
-                    fontSize: '0.75rem',
-                    color: '#999',
-                    textAlign: 'center',
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '0.5rem',
                     marginTop: '0.5rem'
                   }}>
-                    Link: kaundang-id.vercel.app/undangan/{inv.slug}
+                    <Link
+                      href={`/my-invitations/${inv.id}/edit`}
+                      style={{
+                        padding: '0.6rem',
+                        background: 'transparent',
+                        border: '1px solid #ccc',
+                        color: '#666',
+                        textAlign: 'center',
+                        textDecoration: 'none',
+                        fontSize: '0.8rem'
+                      }}
+                    >
+                      ✏️ Edit
+                    </Link>
+                    
+                    <button
+                      onClick={async () => {
+                        if (confirm('Yakin ingin menghapus undangan ini?')) {
+                          const { error } = await supabase
+                            .from('invitations')
+                            .delete()
+                            .eq('id', inv.id)
+                          
+                          if (error) {
+                            alert('Error: ' + error.message)
+                          } else {
+                            alert('Undangan berhasil dihapus!')
+                            fetchInvitations(user.id)
+                          }
+                        }
+                      }}
+                      style={{
+                        padding: '0.6rem',
+                        background: 'transparent',
+                        border: '1px solid #fcc',
+                        color: '#c33',
+                        textAlign: 'center',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🗑️ Hapus
+                    </button>
                   </div>
                 </div>
-              </div>
+                </div>
             ))}
           </div>
         )}
