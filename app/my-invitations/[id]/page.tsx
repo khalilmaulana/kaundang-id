@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import * as XLSX from 'xlsx'
+import QRCode from 'qrcode'
 
 export default function InvitationDetail() {
   const params = useParams()
@@ -14,6 +16,10 @@ export default function InvitationDetail() {
   const [rsvps, setRsvps] = useState<any[]>([])
   const [wishes, setWishes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+
+  const [photos, setPhotos] = useState<File[]>([])
+  const [existingPhotos, setExistingPhotos] = useState<string[]>([])
+  const [uploadingPhotos, setUploadingPhotos] = useState(false)
 
   useEffect(() => {
     checkUser()
@@ -37,7 +43,7 @@ export default function InvitationDetail() {
       .from('invitations')
       .select('*')
       .eq('id', invitationId)
-      .eq('user_id', userId) // Pastikan user hanya bisa lihat undangan mereka
+      .eq('user_id', userId)
       .single()
     
     if (!invData) {
@@ -45,6 +51,7 @@ export default function InvitationDetail() {
       return
     }
     
+
     setInvitation(invData)
     
     // Fetch RSVP
@@ -65,6 +72,27 @@ export default function InvitationDetail() {
     if (wishData) setWishes(wishData)
     
     setLoading(false)
+  }
+
+  const handleDownloadQR = async () => {
+    try {
+      const url = `${window.location.origin}/undangan/${invitation.slug}`
+      const qrDataUrl = await QRCode.toDataURL(url, {
+        width: 500,
+        margin: 2,
+        color: {
+          dark: '#1C150A',
+          light: '#FAF6EE'
+        }
+      })
+      
+      const link = document.createElement('a')
+      link.href = qrDataUrl
+      link.download = `QR_${invitation.bride_name}_${invitation.groom_name}.png`
+      link.click()
+    } catch (error) {
+      alert('Error generating QR Code')
+    }
   }
 
   if (loading) {
@@ -141,20 +169,68 @@ export default function InvitationDetail() {
               </p>
             </div>
             
-            <Link
-              href={`/undangan/${invitation.slug}`}
-              target="_blank"
-              style={{
-                padding: '0.6rem 1.5rem',
-                background: '#D4A843',
-                color: '#0D0D0D',
-                textDecoration: 'none',
-                fontSize: '0.9rem',
-                fontWeight: 500
-              }}
-            >
-              Lihat Undangan →
-            </Link>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              {/* Export Excel Button */}
+              <button
+                onClick={() => {
+                  const excelData = rsvps.map((rsvp, index) => ({
+                    'No': index + 1,
+                    'Nama': rsvp.name,
+                    'No HP': rsvp.phone || '-',
+                    'Kehadiran': rsvp.attendance,
+                    'Jumlah Tamu': rsvp.guest_count || 1,
+                    'Tanggal': new Date(rsvp.created_at).toLocaleDateString('id-ID')
+                  }))
+          
+                  const ws = XLSX.utils.json_to_sheet(excelData)
+                  const wb = XLSX.utils.book_new()
+                  XLSX.utils.book_append_sheet(wb, ws, 'RSVP')
+                  XLSX.writeFile(wb, `RSVP_${invitation.bride_name}_${invitation.groom_name}.xlsx`)
+                }}
+                style={{
+                  padding: '0.6rem 1.5rem',
+                  background: '#10B981',
+                  color: '#fff',
+                  border: 'none',
+                  fontSize: '0.9rem',
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}
+              >
+                📊 Export Excel
+              </button>
+              
+              {/* QR Code Button */}
+              <button
+                onClick={handleDownloadQR}
+                style={{
+                  padding: '0.6rem 1.5rem',
+                  background: '#8B5CF6',
+                  color: '#fff',
+                  border: 'none',
+                  fontSize: '0.9rem',
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}
+              >
+                📱 Download QR Code
+              </button>
+
+              <Link
+                href={`/undangan/${invitation.slug}`}
+                target="_blank"
+                style={{
+                  padding: '0.6rem 1.5rem',
+                  background: '#D4A843',
+                  color: '#0D0D0D',
+                  textDecoration: 'none',
+                  fontSize: '0.9rem',
+                  fontWeight: 500
+                }}
+              >
+                Lihat Undangan →
+              </Link>
+            </div>
           </div>
         </div>
 

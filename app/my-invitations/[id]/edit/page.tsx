@@ -13,6 +13,11 @@ export default function EditInvitation() {
   const [user, setUser] = useState<any>(null)
   const [fetching, setFetching] = useState(true)
   
+  // Photo states
+  const [photos, setPhotos] = useState<File[]>([])
+  const [existingPhotos, setExistingPhotos] = useState<string[]>([])
+  const [uploadingPhotos, setUploadingPhotos] = useState(false)
+  
   // Form data
   const [formData, setFormData] = useState({
     groom_name: '',
@@ -28,7 +33,8 @@ export default function EditInvitation() {
     resepsi_date: '',
     resepsi_time: '',
     resepsi_venue: '',
-    resepsi_address: ''
+    resepsi_address: '',
+    music_url: ''
   })
 
   useEffect(() => {
@@ -44,7 +50,6 @@ export default function EditInvitation() {
     
     setUser(user)
     
-    // Fetch invitation data
     const { data, error } = await supabase
       .from('invitations')
       .select('*')
@@ -71,21 +76,94 @@ export default function EditInvitation() {
       resepsi_date: data.resepsi_date || '',
       resepsi_time: data.resepsi_time || '',
       resepsi_venue: data.resepsi_venue || '',
-      resepsi_address: data.resepsi_address || ''
+      resepsi_address: data.resepsi_address || '',
+      music_url: data.music_url || ''
     })
     
+    setExistingPhotos(data.photos || [])
     setFetching(false)
   }
 
+  const uploadPhotos = async (userId: string) => {
+    console.log('=== UPLOAD PHOTOS DEBUG START ===')
+    console.log('Number of photos to upload:', photos.length)
+    console.log('User ID:', userId)
+    
+    if (photos.length === 0) {
+      console.log('No photos to upload, returning empty array')
+      return []
+    }
+
+    const uploadedUrls: string[] = []
+    
+    for (let i = 0; i < photos.length; i++) {
+      const photo = photos[i]
+      console.log(`\n--- Uploading photo ${i + 1}/${photos.length} ---`)
+      console.log('File name:', photo.name)
+      console.log('File size:', photo.size, 'bytes')
+      console.log('File type:', photo.type)
+      
+      const fileExt = photo.name.split('.').pop()
+      const fileName = `${userId}/${Date.now()}_${i}.${fileExt}`
+      console.log('Storage path:', fileName)
+      
+      try {
+        const { data, error } = await supabase.storage
+          .from('photos')
+          .upload(fileName, photo, {
+            cacheControl: '3600',
+            upsert: false
+          })
+        
+        if (error) {
+          console.error('❌ Upload ERROR:', error)
+          console.error('Error message:', error.message)
+          continue
+        }
+        
+        if (data) {
+          console.log('✅ Upload SUCCESS:', data.path)
+          
+          const { data: urlData } = supabase.storage
+            .from('photos')
+            .getPublicUrl(fileName)
+          
+          const publicUrl = urlData.publicUrl
+          console.log('Public URL generated:', publicUrl)
+          
+          uploadedUrls.push(publicUrl)
+          console.log('Added to uploadedUrls array')
+        }
+      } catch (err) {
+        console.error('❌ Unexpected error during upload:', err)
+      }
+    }
+    
+    console.log('\n=== UPLOAD PHOTOS DEBUG END ===')
+    console.log('Total successfully uploaded:', uploadedUrls.length)
+    console.log('Uploaded URLs:', uploadedUrls)
+    
+    return uploadedUrls
+  }
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setUploadingPhotos(true)
+
+    const newPhotoUrls = await uploadPhotos(user.id)
+    const allPhotos = [...existingPhotos, ...newPhotoUrls]
 
     const { data, error } = await supabase
       .from('invitations')
-      .update(formData)
+      .update({
+        ...formData,
+        photos: allPhotos
+      })
       .eq('id', invitationId)
       .eq('user_id', user.id)
+
+    setUploadingPhotos(false)
 
     if (error) {
       alert('Error: ' + error.message)
@@ -129,7 +207,6 @@ export default function EditInvitation() {
         maxWidth: '800px',
         margin: '0 auto'
       }}>
-        {/* Header */}
         <div style={{
           marginBottom: '3rem',
           textAlign: 'center'
@@ -150,7 +227,6 @@ export default function EditInvitation() {
           </p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} style={{
           background: '#fff',
           padding: '2.5rem',
@@ -382,7 +458,155 @@ export default function EditInvitation() {
             </div>
           </div>
 
-          {/* Submit */}
+          {/* Music */}
+          <div style={{ marginBottom: '2.5rem' }}>
+            <h2 style={{
+              fontSize: '1.3rem',
+              fontWeight: 600,
+              color: '#C9A557',
+              marginBottom: '1.5rem',
+              paddingBottom: '0.5rem',
+              borderBottom: '2px solid rgba(201,165,87,0.2)'
+            }}>
+              🎵 Background Music (Opsional)
+            </h2>
+            
+            <div style={{ marginBottom: '1.2rem' }}>
+              <label style={labelStyle}>URL Musik</label>
+              <input
+                type="url"
+                name="music_url"
+                value={formData.music_url}
+                onChange={handleChange}
+                placeholder="https://example.com/song.mp3"
+                style={inputStyle}
+              />
+              <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>
+                Kosongkan jika tidak ingin menambahkan musik.
+              </p>
+            </div>
+          </div>
+          
+          {/* Photo Gallery */}
+          <div style={{ marginBottom: '2.5rem' }}>
+            <h2 style={{
+              fontSize: '1.3rem',
+              fontWeight: 600,
+              color: '#C9A557',
+              marginBottom: '1.5rem',
+              paddingBottom: '0.5rem',
+              borderBottom: '2px solid rgba(201,165,87,0.2)'
+            }}>
+              📸 Galeri Foto
+            </h2>
+            
+            {existingPhotos.length > 0 && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={labelStyle}>Foto Saat Ini ({existingPhotos.length})</label>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
+                  gap: '0.5rem',
+                  marginBottom: '1rem'
+                }}>
+                  {existingPhotos.map((photo, i) => (
+                    <div key={i} style={{
+                      position: 'relative',
+                      paddingBottom: '100%',
+                      background: '#f5f5f5',
+                      borderRadius: '4px',
+                      overflow: 'hidden'
+                    }}>
+                      <img
+                        src={photo}
+                        alt={`Photo ${i + 1}`}
+                        style={{
+                          position: 'absolute',
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setExistingPhotos(existingPhotos.filter((_, idx) => idx !== i))
+                        }}
+                        style={{
+                          position: 'absolute',
+                          top: '4px',
+                          right: '4px',
+                          background: 'rgba(255,0,0,0.8)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '24px',
+                          height: '24px',
+                          cursor: 'pointer',
+                          fontSize: '0.7rem'
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div style={{ marginBottom: '1.2rem' }}>
+              <label style={labelStyle}>Tambah Foto Baru (Max 10 total)</label>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || [])
+                  const total = existingPhotos.length + files.length
+                  if (total > 10) {
+                    alert(`Maksimal 10 foto (saat ini: ${existingPhotos.length})`)
+                    return
+                  }
+                  setPhotos(files)
+                }}
+                style={inputStyle}
+              />
+              <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>
+                Maksimal 10 foto total. Saat ini: {existingPhotos.length} foto.
+              </p>
+              
+              {photos.length > 0 && (
+                <div style={{
+                  marginTop: '1rem',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
+                  gap: '0.5rem'
+                }}>
+                  {photos.map((photo, i) => (
+                    <div key={i} style={{
+                      position: 'relative',
+                      paddingBottom: '100%',
+                      background: '#f5f5f5',
+                      borderRadius: '4px',
+                      overflow: 'hidden'
+                    }}>
+                      <img
+                        src={URL.createObjectURL(photo)}
+                        alt={`Preview ${i + 1}`}
+                        style={{
+                          position: 'absolute',
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           <div style={{
             display: 'flex',
             gap: '1rem',
@@ -416,7 +640,7 @@ export default function EditInvitation() {
                 opacity: loading ? 0.6 : 1
               }}
             >
-              {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
+              {uploadingPhotos ? 'Uploading photos...' : loading ? 'Menyimpan...' : 'Simpan Perubahan'}
             </button>
           </div>
         </form>

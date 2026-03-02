@@ -18,6 +18,9 @@ export default function InvitationPage() {
   const [wishName, setWishName] = useState('')
   const [wishMessage, setWishMessage] = useState('')
 
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null)
+
   useEffect(() => {
     fetchInvitation()
   }, [slug])
@@ -46,6 +49,41 @@ export default function InvitationPage() {
     }
   }, [invitation])
 
+  useEffect(() => {
+  if (invitation && invitation.music_url && envelopeOpen) {
+    const audio = new Audio(invitation.music_url)
+    audio.loop = true
+    audio.volume = 0.5
+    
+    // Try auto-play
+    audio.play().then(() => {
+      setIsPlaying(true)
+    }).catch(() => {
+      // Auto-play blocked, user needs to click
+      setIsPlaying(false)
+    })
+    
+    setAudioRef(audio)
+    
+    return () => {
+      audio.pause()
+      audio.src = ''
+    }
+  }
+}, [invitation, envelopeOpen])
+
+const toggleMusic = () => {
+  if (audioRef) {
+    if (isPlaying) {
+      audioRef.pause()
+      setIsPlaying(false)
+    } else {
+      audioRef.play()
+      setIsPlaying(true)
+    }
+  }
+}
+
   const fetchInvitation = async () => {
     setLoading(true)
     
@@ -54,7 +92,12 @@ export default function InvitationPage() {
       .select('*')
       .eq('slug', slug)
       .single()
-    
+      
+      console.log('=== DEBUG INVITATION DATA ===')
+      console.log('Full invitation data:', invData)
+      console.log('Photos:', invData?.photos)
+      console.log('Photos length:', invData?.photos?.length)
+      
     if (invData) {
       setInvitation(invData)
       
@@ -439,6 +482,77 @@ export default function InvitationPage() {
         </div>
       </section>
 
+      {/* NEW: PHOTO GALLERY */}
+      {invitation.photos && invitation.photos.length > 0 && (
+        <section style={{
+          background: 'var(--cream)',
+          padding: '6rem 2rem',
+          textAlign: 'center'
+        }}>
+          <span style={{
+            fontSize: '0.7rem',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            color: 'var(--gold)',
+            display: 'block',
+            marginBottom: '0.8rem'
+          }}>
+            ✦ Galeri Foto
+          </span>
+          
+          <h2 style={{
+            fontFamily: "'Playfair Display', serif",
+            fontSize: 'clamp(2rem, 4vw, 3rem)',
+            fontWeight: 400,
+            color: 'var(--dark)',
+            marginBottom: '3rem'
+          }}>
+            Momen Kami
+          </h2>
+
+          <div style={{
+            maxWidth: '1200px',
+            margin: '0 auto',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '1.5rem'
+          }}>
+            {invitation.photos.map((photo: string, index: number) => (
+              <div
+                key={index}
+                style={{
+                  position: 'relative',
+                  paddingBottom: '100%',
+                  overflow: 'hidden',
+                  border: '1px solid rgba(201,165,87,0.2)',
+                  cursor: 'pointer',
+                  transition: 'transform 0.3s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.05)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)'
+                }}
+              >
+                <img
+                  src={photo}
+                  alt={`Gallery ${index + 1}`}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* RSVP */}
       <section style={{
         background: 'var(--cream2)',
@@ -797,6 +911,47 @@ export default function InvitationPage() {
           </span>
         </div>
       </section>
+      
+      {/* Floating Music Button */}
+      {invitation.music_url && envelopeOpen && (
+        <div
+          onClick={toggleMusic}
+          style={{
+            position: 'fixed',
+            bottom: '2rem',
+            right: '2rem',
+            width: '60px',
+            height: '60px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #C9A557, #D4A843)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: '0 4px 20px rgba(201,165,87,0.4)',
+            zIndex: 999,
+            transition: 'transform 0.3s',
+            animation: isPlaying ? 'pulse 2s infinite' : 'none'
+          }}
+        >
+          <span style={{
+            fontSize: '1.5rem'
+          }}>
+            {isPlaying ? '🔊' : '🔇'}
+          </span>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes pulse {
+          0%, 100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.1);
+          }
+        }
+      `}</style>
     </main>
   )
 }

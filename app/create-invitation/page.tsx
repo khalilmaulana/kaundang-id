@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useCallback } from 'react'
 
 export default function CreateInvitation() {
   const router = useRouter()
@@ -25,8 +26,12 @@ export default function CreateInvitation() {
     resepsi_date: '',
     resepsi_time: '',
     resepsi_venue: '',
-    resepsi_address: ''
+    resepsi_address: '',
+    music_url: ''  // NEW
   })
+  // NEW: Add state for photos
+  const [photos, setPhotos] = useState<File[]>([])
+  const [uploadingPhotos, setUploadingPhotos] = useState(false)
 
   useEffect(() => {
     checkUser()
@@ -47,32 +52,64 @@ export default function CreateInvitation() {
     return `${groomSlug}-${brideSlug}`
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
+  const uploadPhotos = async (userId: string) => {
+  if (photos.length === 0) return []
 
-    const slug = generateSlug()
-
-    const { data, error } = await supabase
-      .from('invitations')
-      .insert([
-        {
-          ...formData,
-          slug,
-          user_id: user.id
-        }
-      ])
-      .select()
-
-    if (error) {
-      alert('Error: ' + error.message)
-    } else {
-      alert('Undangan berhasil dibuat! 🎉')
-      router.push(`/undangan/${slug}`)
+  const uploadedUrls: string[] = []
+  
+  for (const photo of photos) {
+    const fileExt = photo.name.split('.').pop()
+    const fileName = `${userId}/${Date.now()}.${fileExt}`
+    
+    const { data, error } = await supabase.storage
+      .from('photos')
+      .upload(fileName, photo)
+    
+    if (data) {
+      const { data: { publicUrl } } = supabase.storage
+        .from('photos')
+        .getPublicUrl(fileName)
+      
+      uploadedUrls.push(publicUrl)
     }
-
-    setLoading(false)
   }
+  
+  return uploadedUrls
+}
+
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setLoading(true)
+  setUploadingPhotos(true)
+
+  const slug = generateSlug()
+  
+  // Upload photos first
+  const photoUrls = await uploadPhotos(user.id)
+
+  const { data, error } = await supabase
+    .from('invitations')
+    .insert([
+      {
+        ...formData,
+        slug,
+        user_id: user.id,
+        photos: photoUrls  // Add photos
+      }
+    ])
+    .select()
+
+  setUploadingPhotos(false)
+  
+  if (error) {
+    alert('Error: ' + error.message)
+  } else {
+    alert('Undangan berhasil dibuat! 🎉')
+    router.push(`/undangan/${slug}`)
+  }
+
+  setLoading(false)
+}
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -373,6 +410,100 @@ export default function CreateInvitation() {
             </div>
           </div>
 
+          {/* Music */}
+          <div style={{ marginBottom: '2.5rem' }}>
+            <h2 style={{
+              fontSize: '1.3rem',
+              fontWeight: 600,
+              color: '#C9A557',
+              marginBottom: '1.5rem',
+              paddingBottom: '0.5rem',
+              borderBottom: '2px solid rgba(201,165,87,0.2)'
+            }}>
+              🎵 Background Music (Opsional)
+            </h2>
+            
+            <div style={{ marginBottom: '1.2rem' }}>
+              <label style={labelStyle}>URL Musik</label>
+              <input
+                type="url"
+                name="music_url"
+                value={formData.music_url}
+                onChange={handleChange}
+                placeholder="https://example.com/song.mp3 atau YouTube URL"
+                style={inputStyle}
+              />
+              <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>
+                Kosongkan jika tidak ingin menambahkan musik. Bisa pakai link MP3 atau YouTube.
+              </p>
+            </div>
+          </div>
+          
+          {/* Photo Gallery */}
+          <div style={{ marginBottom: '2.5rem' }}>
+            <h2 style={{
+              fontSize: '1.3rem',
+              fontWeight: 600,
+              color: '#C9A557',
+              marginBottom: '1.5rem',
+              paddingBottom: '0.5rem',
+              borderBottom: '2px solid rgba(201,165,87,0.2)'
+            }}>
+              📸 Galeri Foto (Opsional)
+            </h2>
+            
+            <div style={{ marginBottom: '1.2rem' }}>
+              <label style={labelStyle}>Upload Foto (Max 10 foto)</label>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || [])
+                  if (files.length > 10) {
+                    alert('Maksimal 10 foto')
+                    return
+                  }
+                  setPhotos(files)
+                }}
+                style={inputStyle}
+              />
+              <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>
+                Upload foto pre-wedding atau foto pasangan (JPG, PNG). Maksimal 10 foto.
+              </p>
+              
+              {photos.length > 0 && (
+                <div style={{
+                  marginTop: '1rem',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
+                  gap: '0.5rem'
+                }}>
+                  {photos.map((photo, i) => (
+                    <div key={i} style={{
+                      position: 'relative',
+                      paddingBottom: '100%',
+                      background: '#f5f5f5',
+                      borderRadius: '4px',
+                      overflow: 'hidden'
+                    }}>
+                      <img
+                        src={URL.createObjectURL(photo)}
+                        alt={`Preview ${i + 1}`}
+                        style={{
+                          position: 'absolute',
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Submit */}
           <div style={{
             display: 'flex',
@@ -394,21 +525,21 @@ export default function CreateInvitation() {
               Batal
             </Link>
             <button
-              type="submit"
-              disabled={loading}
-              style={{
-                padding: '1rem 2rem',
-                background: '#C9A557',
-                border: 'none',
-                color: '#fff',
-                fontSize: '0.95rem',
-                fontWeight: 600,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.6 : 1
-              }}
-            >
-              {loading ? 'Menyimpan...' : 'Buat Undangan'}
-            </button>
+            type="submit"
+            disabled={loading}
+            style={{
+              padding: '1rem 2rem',
+              background: '#C9A557',
+              border: 'none',
+              color: '#fff',
+              fontSize: '0.95rem',
+              fontWeight: 600,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.6 : 1
+            }}
+          >
+            {uploadingPhotos ? 'Uploading photos...' : loading ? 'Menyimpan...' : 'Buat Undangan'}
+          </button>
           </div>
         </form>
       </div>
