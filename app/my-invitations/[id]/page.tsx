@@ -216,6 +216,24 @@ export default function InvitationDetail() {
                 📱 Download QR Code
               </button>
 
+                        {/* NEW: Guest List Button */}
+          <Link
+            href={`/my-invitations/${invitationId}/guests`}
+            style={{
+              padding: '0.9rem 1.5rem',
+              background: '#F59E0B',
+              border: 'none',
+              color: '#fff',
+              fontSize: '0.9rem',
+              fontWeight: 500,
+              textDecoration: 'none',
+              borderRadius: '4px',
+              display: 'inline-block'
+            }}
+          >
+            📋 Guest List
+          </Link>
+          
               <Link
                 href={`/undangan/${invitation.slug}`}
                 target="_blank"

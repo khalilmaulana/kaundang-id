@@ -34,7 +34,8 @@ export default function EditInvitation() {
     resepsi_time: '',
     resepsi_venue: '',
     resepsi_address: '',
-    music_url: ''
+    music_url: '',
+    template: 'gold-cream'  // NEW
   })
 
   useEffect(() => {
@@ -77,7 +78,8 @@ export default function EditInvitation() {
       resepsi_time: data.resepsi_time || '',
       resepsi_venue: data.resepsi_venue || '',
       resepsi_address: data.resepsi_address || '',
-      music_url: data.music_url || ''
+      music_url: data.music_url || '',
+      template: data.template || 'gold-cream'  // NEW
     })
     
     setExistingPhotos(data.photos || [])
@@ -484,6 +486,80 @@ export default function EditInvitation() {
               <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>
                 Kosongkan jika tidak ingin menambahkan musik.
               </p>
+            </div>
+          </div>
+
+          {/* NEW: Template Selection */}
+          <div style={{ marginBottom: '2.5rem' }}>
+            <h2 style={{
+              fontSize: '1.3rem',
+              fontWeight: 600,
+              color: '#C9A557',
+              marginBottom: '1.5rem',
+              paddingBottom: '0.5rem',
+              borderBottom: '2px solid rgba(201,165,87,0.2)'
+            }}>
+              🎨 Pilih Template
+            </h2>
+            
+            <div style={{ marginBottom: '1.2rem' }}>
+              <label style={labelStyle}>Template Undangan</label>
+              <select
+                name="template"
+                value={formData.template}
+                onChange={handleChange}
+                style={inputStyle}
+              >
+                <option value="gold-cream">Gold & Cream (Elegant Classic)</option>
+                <option value="modern-minimal">Modern Minimalist (Clean & Simple)</option>
+                <option value="floral-romantic">Floral Romantic (Soft & Sweet)</option>
+              </select>
+              <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>
+                Pilih tema yang sesuai dengan style pernikahan Anda
+              </p>
+            </div>
+
+            {/* Template Preview Cards */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+              gap: '1rem',
+              marginTop: '1.5rem'
+            }}>
+              {[
+                { id: 'gold-cream', name: 'Gold & Cream', color: '#C9A557', bg: '#FAF6EE' },
+                { id: 'modern-minimal', name: 'Modern Minimal', color: '#1a1a1a', bg: '#f5f5f5' },
+                { id: 'floral-romantic', name: 'Floral Romantic', color: '#ff9eb7', bg: '#fef8f5' }
+              ].map((template) => (
+                <div
+                  key={template.id}
+                  onClick={() => setFormData({ ...formData, template: template.id })}
+                  style={{
+                    padding: '1.5rem',
+                    background: template.bg,
+                    border: formData.template === template.id ? `3px solid ${template.color}` : '1px solid #ddd',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    transition: 'all 0.3s',
+                    borderRadius: '8px'
+                  }}
+                >
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    background: template.color,
+                    margin: '0 auto 0.8rem'
+                  }}></div>
+                  <div style={{
+                    fontSize: '0.85rem',
+                    fontWeight: formData.template === template.id ? 600 : 400,
+                    color: template.color
+                  }}>
+                    {template.name}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
           
