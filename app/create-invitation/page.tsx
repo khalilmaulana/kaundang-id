@@ -4,6 +4,7 @@
   import { useRouter } from 'next/navigation'
   import Link from 'next/link'
   import { useCallback } from 'react'
+  import TemplatePreview from '../components/TemplatePreview'
 
   export default function CreateInvitation() {
     const router = useRouter()
@@ -33,6 +34,10 @@
     // NEW: Add state for photos
     const [photos, setPhotos] = useState<File[]>([])
     const [uploadingPhotos, setUploadingPhotos] = useState(false)
+
+    // NEW: Add preview state
+const [showPreview, setShowPreview] = useState(false)
+const [previewTemplate, setPreviewTemplate] = useState('')
 
     useEffect(() => {
       checkUser()
@@ -509,11 +514,35 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
                     }}>
                       {template.name}
                     </div>
+
+                    {/* NEW: Preview Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setPreviewTemplate(template.id)
+                      setShowPreview(true)
+                    }}
+                    style={{
+                      padding: '0.4rem 0.8rem',
+                      background: template.color,
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer',
+                      marginTop: '0.3rem'
+                    }}
+                  >
+                    👁️ Preview
+                  </button>
+
                   </div>
                 ))}
               </div>
             </div>
-
+            
+            
             {/* Photo Gallery */}
             <div style={{ marginBottom: '2.5rem' }}>
               <h2 style={{
@@ -618,10 +647,18 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
             </div>
           </form>
         </div>
-      </div>
-    )
-  }
+       {/* Preview Modal */}
+      {showPreview && (
+        <TemplatePreview 
+          template={previewTemplate}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
+    </div>
+  )
+}
 
+  
   const labelStyle = {
     display: 'block',
     fontSize: '0.85rem',

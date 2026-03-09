@@ -34,7 +34,6 @@ export default function MyInvitations() {
       .order('created_at', { ascending: false })
     
     if (data) {
-      // Fetch RSVP count untuk setiap undangan
       const invitationsWithStats = await Promise.all(
         data.map(async (inv) => {
           const { data: rsvpData } = await supabase
@@ -65,6 +64,68 @@ export default function MyInvitations() {
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/')
+  }
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Yakin ingin menghapus undangan ini?')) return
+    
+    const { error } = await supabase
+      .from('invitations')
+      .delete()
+      .eq('id', id)
+    
+    if (error) {
+      alert('Error: ' + error.message)
+    } else {
+      alert('Undangan berhasil dihapus!')
+      fetchInvitations(user.id)
+    }
+  }
+
+  const handleDuplicate = async (invitation: any) => {
+    if (!confirm(`Duplicate undangan "${invitation.bride_name} & ${invitation.groom_name}"?`)) return
+    
+    setLoading(true)
+    
+    const timestamp = Date.now()
+    const newSlug = `${invitation.slug}-copy-${timestamp}`
+    
+    const duplicateData = {
+      user_id: invitation.user_id,
+      slug: newSlug,
+      bride_name: invitation.bride_name,
+      groom_name: invitation.groom_name,
+      bride_fullname: invitation.bride_fullname,
+      groom_fullname: invitation.groom_fullname,
+      bride_parents: invitation.bride_parents,
+      groom_parents: invitation.groom_parents,
+      akad_date: invitation.akad_date,
+      akad_time: invitation.akad_time,
+      akad_venue: invitation.akad_venue,
+      akad_address: invitation.akad_address,
+      resepsi_date: invitation.resepsi_date,
+      resepsi_time: invitation.resepsi_time,
+      resepsi_venue: invitation.resepsi_venue,
+      resepsi_address: invitation.resepsi_address,
+      music_url: invitation.music_url || '',
+      photos: [],
+      template: invitation.template || 'gold-cream'
+    }
+    
+    const { data, error } = await supabase
+      .from('invitations')
+      .insert([duplicateData])
+      .select()
+      .single()
+    
+    if (error) {
+      alert('Error duplicating: ' + error.message)
+      setLoading(false)
+    } else {
+      alert('✅ Undangan berhasil di-duplicate!\n\nSlug baru: ' + newSlug)
+      setLoading(false)
+      router.push(`/my-invitations/${data.id}/edit`)
+    }
   }
 
   if (loading) {
@@ -346,7 +407,6 @@ export default function MyInvitations() {
                     Dashboard & Statistik
                   </Link>
 
-                  {/* NEW: Copy Link Button */}
                   <button
                     onClick={() => {
                       const link = `${window.location.origin}/undangan/${inv.slug}`
@@ -367,27 +427,26 @@ export default function MyInvitations() {
                     📋 Salin Link
                   </button>
 
-                  {/* NEW: WhatsApp Share */}
                   <a 
-                  href={`https://wa.me/?text=Hai! Kami mengundang kamu ke pernikahan kami. Lihat undangannya di: ${window.location.origin}/undangan/${inv.slug}`}
-                  target="_blank"
-                  style={{
-                  padding: '0.8rem',
-                  background: '#25D366',
-                  color: '#fff',
-                  textAlign: 'center',
-                  textDecoration: 'none',
-                  fontSize: '0.85rem',
-                  fontWeight: 500
-                  }}
+                    href={`https://wa.me/?text=Hai! Kami mengundang kamu ke pernikahan kami. Lihat undangannya di: ${window.location.origin}/undangan/${inv.slug}`}
+                    target="_blank"
+                    style={{
+                      padding: '0.8rem',
+                      background: '#25D366',
+                      color: '#fff',
+                      textAlign: 'center',
+                      textDecoration: 'none',
+                      fontSize: '0.85rem',
+                      fontWeight: 500
+                    }}
                   >
-                  💬 Share via WhatsApp
+                    💬 Share via WhatsApp
                   </a>
 
-                  {/* NEW: Edit & Delete */}
+                  {/* Edit, Duplicate, Delete Grid */}
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
+                    gridTemplateColumns: '1fr 1fr 1fr',
                     gap: '0.5rem',
                     marginTop: '0.5rem'
                   }}>
@@ -396,8 +455,8 @@ export default function MyInvitations() {
                       style={{
                         padding: '0.6rem',
                         background: 'transparent',
-                        border: '1px solid #ccc',
-                        color: '#666',
+                        border: '1px solid #3B82F6',
+                        color: '#3B82F6',
                         textAlign: 'center',
                         textDecoration: 'none',
                         fontSize: '0.8rem'
@@ -405,28 +464,29 @@ export default function MyInvitations() {
                     >
                       ✏️ Edit
                     </Link>
-                    
+
                     <button
-                      onClick={async () => {
-                        if (confirm('Yakin ingin menghapus undangan ini?')) {
-                          const { error } = await supabase
-                            .from('invitations')
-                            .delete()
-                            .eq('id', inv.id)
-                          
-                          if (error) {
-                            alert('Error: ' + error.message)
-                          } else {
-                            alert('Undangan berhasil dihapus!')
-                            fetchInvitations(user.id)
-                          }
-                        }
-                      }}
+                      onClick={() => handleDuplicate(inv)}
                       style={{
                         padding: '0.6rem',
                         background: 'transparent',
-                        border: '1px solid #fcc',
-                        color: '#c33',
+                        border: '1px solid #10B981',
+                        color: '#10B981',
+                        textAlign: 'center',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      📋 Duplikat
+                    </button>
+                    
+                    <button
+                      onClick={() => handleDelete(inv.id)}
+                      style={{
+                        padding: '0.6rem',
+                        background: 'transparent',
+                        border: '1px solid #EF4444',
+                        color: '#EF4444',
                         textAlign: 'center',
                         fontSize: '0.8rem',
                         cursor: 'pointer'
@@ -436,7 +496,7 @@ export default function MyInvitations() {
                     </button>
                   </div>
                 </div>
-                </div>
+              </div>
             ))}
           </div>
         )}

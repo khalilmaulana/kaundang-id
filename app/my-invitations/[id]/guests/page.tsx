@@ -16,6 +16,31 @@ export default function GuestListPage() {
   const [guests, setGuests] = useState<any[]>([])
   const [importing, setImporting] = useState(false)
 
+  // NEW: Search & Filter states
+const [searchQuery, setSearchQuery] = useState('')
+const [filterStatus, setFilterStatus] = useState('all')
+const [filteredGuests, setFilteredGuests] = useState<any[]>([])
+
+
+  // NEW: Filter logic
+useEffect(() => {
+  let result = [...guests]
+  
+  // Search by name
+  if (searchQuery) {
+    result = result.filter(guest => 
+      guest.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  }
+  
+  // Filter by status
+  if (filterStatus !== 'all') {
+    result = result.filter(guest => guest.status === filterStatus)
+  }
+  
+  setFilteredGuests(result)
+}, [guests, searchQuery, filterStatus])
+
   useEffect(() => {
     checkUserAndFetch()
   }, [])
@@ -26,7 +51,7 @@ export default function GuestListPage() {
       router.push('/login')
       return
     }
-    
+
     setUser(user)
     
     // Fetch invitation
@@ -117,6 +142,27 @@ export default function GuestListPage() {
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Guest List')
     XLSX.writeFile(wb, `GuestList_${invitation.bride_name}_${invitation.groom_name}.xlsx`)
+  }
+
+// NEW: Copy All Links Function
+  const handleCopyAllLinks = () => {
+    const allLinks = guests.map((guest) => {
+      const link = `${window.location.origin}/undangan/${invitation.slug}?guest=${guest.personalized_code}`
+      return `${guest.name} - ${link}`
+    }).join('\n')
+    
+    navigator.clipboard.writeText(allLinks).then(() => {
+      alert(`✅ ${guests.length} links berhasil di-copy!\n\nFormat:\nNama - Link\n\nPaste di Notes/Excel untuk kirim via WhatsApp!`)
+    }).catch(() => {
+      // Fallback for older browsers
+      const textarea = document.createElement('textarea')
+      textarea.value = allLinks
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+      alert(`✅ ${guests.length} links berhasil di-copy!`)
+    })
   }
 
   const generateWhatsAppMessage = (guest: any) => {
@@ -249,6 +295,24 @@ Wassalamualaikum Wr. Wb.`
             </button>
           </div>
         </div>
+        
+         {/* NEW: Copy All Links Button */}
+            <button
+              onClick={handleCopyAllLinks}
+              disabled={guests.length === 0}
+              style={{
+                padding: '0.8rem 1.5rem',
+                background: guests.length === 0 ? '#ccc' : '#F59E0B',
+                color: '#fff',
+                cursor: guests.length === 0 ? 'not-allowed' : 'pointer',
+                fontSize: '0.9rem',
+                fontWeight: 500,
+                border: 'none',
+                borderRadius: '4px'
+              }}
+            >
+              📋 Copy All Links
+            </button>
 
         {/* Stats */}
         <div style={{
@@ -335,7 +399,71 @@ Wassalamualaikum Wr. Wb.`
             </h2>
           </div>
 
-          {guests.length === 0 ? (
+                      {/* NEW: Search & Filter Bar */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr auto',
+              gap: '1rem',
+              marginTop: '1rem'
+            }}>
+              {/* Search Input */}
+              <input
+                type="text"
+                placeholder="🔍 Cari nama tamu..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  padding: '0.7rem 1rem',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '0.9rem',
+                  outline: 'none'
+                }}
+              />
+
+              {/* Filter Dropdown */}
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                style={{
+                  padding: '0.7rem 1rem',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '0.9rem',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  minWidth: '200px'
+                }}
+              >
+                <option value="all">📊 Semua Status ({guests.length})</option>
+                <option value="pending">⏳ Belum Buka ({guests.filter(g => g.status === 'pending').length})</option>
+                <option value="opened">👁️ Sudah Buka ({guests.filter(g => g.status === 'opened').length})</option>
+                <option value="rsvp_done">✅ Sudah RSVP ({guests.filter(g => g.status === 'rsvp_done').length})</option>
+              </select>
+            </div>
+
+            {/* Clear Filters Button */}
+            {(searchQuery || filterStatus !== 'all') && (
+              <button
+                onClick={() => {
+                  setSearchQuery('')
+                  setFilterStatus('all')
+                }}
+                style={{
+                  marginTop: '0.8rem',
+                  padding: '0.5rem 1rem',
+                  background: '#f3f4f6',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+              >
+                ✕ Clear Filters
+              </button>
+            )} 
+
+          {filteredGuests.length === 0 ? (
             <div style={{
               padding: '3rem',
               textAlign: 'center',
@@ -370,7 +498,7 @@ Wassalamualaikum Wr. Wb.`
                   </tr>
                 </thead>
                 <tbody>
-                  {guests.map((guest, index) => (
+                  {filteredGuests.map((guest, index) => (
                     <tr key={guest.id} style={{
                       borderBottom: '1px solid #f0f0f0'
                     }}>
