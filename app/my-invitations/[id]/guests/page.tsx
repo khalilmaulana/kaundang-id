@@ -21,7 +21,17 @@ const [searchQuery, setSearchQuery] = useState('')
 const [filterStatus, setFilterStatus] = useState('all')
 const [filteredGuests, setFilteredGuests] = useState<any[]>([])
 
+  useEffect(() => {
+    checkUserAndFetch()
+  }, [])
 
+  const checkUserAndFetch = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      router.push('/login')
+      return
+    }
+    
   // NEW: Filter logic
 useEffect(() => {
   let result = [...guests]
@@ -40,17 +50,6 @@ useEffect(() => {
   
   setFilteredGuests(result)
 }, [guests, searchQuery, filterStatus])
-
-  useEffect(() => {
-    checkUserAndFetch()
-  }, [])
-
-  const checkUserAndFetch = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      router.push('/login')
-      return
-    }
 
     setUser(user)
     
