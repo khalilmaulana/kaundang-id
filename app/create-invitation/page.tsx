@@ -1,676 +1,564 @@
-  'use client'
-  import { useState, useEffect } from 'react'
-  import { supabase } from '../lib/supabase'
-  import { useRouter } from 'next/navigation'
-  import Link from 'next/link'
-  import { useCallback } from 'react'
-  import TemplatePreview from '../components/TemplatePreview'
+'use client'
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { Heart, ArrowLeft, Users, Calendar, MapPin, Clock, Music, Image as ImageIcon, Palette, Save, Sparkles, Upload, X, Eye } from 'lucide-react'
 
-  export default function CreateInvitation() {
-    const router = useRouter()
-    const [loading, setLoading] = useState(false)
-    const [user, setUser] = useState<any>(null)
-    
-    // Form data
-    const [formData, setFormData] = useState({
-      slug: '',
-      groom_name: '',
-      groom_fullname: '',
-      groom_parents: '',
-      bride_name: '',
-      bride_fullname: '',
-      bride_parents: '',
-      akad_date: '',
-      akad_time: '',
-      akad_venue: '',
-      akad_address: '',
-      resepsi_date: '',
-      resepsi_time: '',
-      resepsi_venue: '',
-      resepsi_address: '',
-      music_url: '',  // NEW
-      template: 'gold-cream'  // NEW - default template
-    })
-    // NEW: Add state for photos
-    const [photos, setPhotos] = useState<File[]>([])
-    const [uploadingPhotos, setUploadingPhotos] = useState(false)
+export default function CreateInvitationPage() {
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
 
-    // NEW: Add preview state
-const [showPreview, setShowPreview] = useState(false)
-const [previewTemplate, setPreviewTemplate] = useState('')
+  // Form states
+  const [brideName, setBrideName] = useState('')
+  const [brideFullname, setBrideFullname] = useState('')
+  const [brideParents, setBrideParents] = useState('')
+  const [groomName, setGroomName] = useState('')
+  const [groomFullname, setGroomFullname] = useState('')
+  const [groomParents, setGroomParents] = useState('')
+  
+  const [akadDate, setAkadDate] = useState('')
+  const [akadTime, setAkadTime] = useState('')
+  const [akadVenue, setAkadVenue] = useState('')
+  const [akadAddress, setAkadAddress] = useState('')
+  
+  const [resepsiDate, setResepsiDate] = useState('')
+  const [resepsiTime, setResepsiTime] = useState('')
+  const [resepsiVenue, setResepsiVenue] = useState('')
+  const [resepsiAddress, setResepsiAddress] = useState('')
+  
+  const [musicUrl, setMusicUrl] = useState('')
+  const [photos, setPhotos] = useState<string[]>([])
+  const [template, setTemplate] = useState('gold-cream')
 
-    useEffect(() => {
-      checkUser()
-    }, [])
+  const [showTemplateModal, setShowTemplateModal] = useState(false)
 
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-      } else {
-        setUser(user)
-      }
+  useEffect(() => {
+    checkUser()
+  }, [])
+
+  const checkUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      router.push('/login')
+    } else {
+      setUser(user)
+      setLoading(false)
     }
-
-    const generateSlug = () => {
-      const groomSlug = formData.groom_name.toLowerCase().replace(/\s+/g, '-')
-      const brideSlug = formData.bride_name.toLowerCase().replace(/\s+/g, '-')
-      return `${groomSlug}-${brideSlug}`
-    }
-
-    const uploadPhotos = async (userId: string) => {
-    if (photos.length === 0) return []
-
-    const uploadedUrls: string[] = []
-    
-    for (const photo of photos) {
-      const fileExt = photo.name.split('.').pop()
-      const fileName = `${userId}/${Date.now()}.${fileExt}`
-      
-      const { data, error } = await supabase.storage
-        .from('photos')
-        .upload(fileName, photo)
-      
-      if (data) {
-        const { data: { publicUrl } } = supabase.storage
-          .from('photos')
-          .getPublicUrl(fileName)
-        
-        uploadedUrls.push(publicUrl)
-      }
-    }
-    
-    return uploadedUrls
   }
 
-    const handleSubmit = async (e: React.FormEvent) => {
+  const generateSlug = () => {
+    const bride = brideName.toLowerCase().replace(/\s+/g, '-')
+    const groom = groomName.toLowerCase().replace(/\s+/g, '-')
+    const timestamp = Date.now().toString().slice(-6)
+    return `${bride}-${groom}-${timestamp}`
+  }
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setPhotos(prev => [...prev, reader.result as string])
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const removePhoto = (index: number) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
-    setUploadingPhotos(true)
+    setSaving(true)
 
     const slug = generateSlug()
-    
-    // Upload photos first
-    const photoUrls = await uploadPhotos(user.id)
 
     const { data, error } = await supabase
       .from('invitations')
-      .insert([
-        {
-          ...formData,
-          slug,
-          user_id: user.id,
-          photos: photoUrls  // Add photos
-        }
-      ])
+      .insert([{
+        user_id: user.id,
+        slug,
+        bride_name: brideName,
+        bride_fullname: brideFullname,
+        bride_parents: brideParents,
+        groom_name: groomName,
+        groom_fullname: groomFullname,
+        groom_parents: groomParents,
+        akad_date: akadDate,
+        akad_time: akadTime,
+        akad_venue: akadVenue,
+        akad_address: akadAddress,
+        resepsi_date: resepsiDate,
+        resepsi_time: resepsiTime,
+        resepsi_venue: resepsiVenue,
+        resepsi_address: resepsiAddress,
+        music_url: musicUrl,
+        photos,
+        template
+      }])
       .select()
+      .single()
 
-    setUploadingPhotos(false)
-    
     if (error) {
       alert('Error: ' + error.message)
+      setSaving(false)
     } else {
-      alert('Undangan berhasil dibuat! 🎉')
-      router.push(`/undangan/${slug}`)
+      alert('✅ Undangan berhasil dibuat!')
+      router.push(`/my-invitations/${data.id}`)
     }
-
-    setLoading(false)
   }
 
-const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-  setFormData({
-    ...formData,
-    [e.target.name]: e.target.value
-  })
-}
-
-    if (!user) {
-      return (
-        <div style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#0D0D0D',
-          color: '#D4A843'
-        }}>
-          Loading...
-        </div>
-      )
-    }
-
+  if (loading) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: '#FAF6EE',
-        padding: '3rem 2rem'
-      }}>
-        <div style={{
-          maxWidth: '800px',
-          margin: '0 auto'
-        }}>
-          {/* Header */}
-          <div style={{
-            marginBottom: '3rem',
-            textAlign: 'center'
-          }}>
-            <h1 style={{
-              fontSize: '2.5rem',
-              fontWeight: 700,
-              color: '#1C150A',
-              marginBottom: '0.5rem'
-            }}>
-              Buat Undangan Baru
-            </h1>
-            <p style={{
-              color: '#666',
-              fontSize: '1rem'
-            }}>
-              Isi data undangan pernikahan Anda
-            </p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-[#D4AF37] via-[#E5C158] to-[#C19B2E] rounded-2xl flex items-center justify-center animate-pulse mx-auto mb-4">
+            <Heart className="w-8 h-8 text-white fill-white" />
+          </div>
+          <p className="text-[#D4AF37] font-semibold">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  const templates = [
+    { id: 'gold-cream', name: 'Gold Cream', colors: ['#D4A843', '#FAF6EE', '#C9A557'], description: 'Elegan & klasik dengan nuansa emas' },
+    { id: 'modern-minimal', name: 'Modern Minimal', colors: ['#2C3E50', '#ECF0F1', '#3498DB'], description: 'Simpel & modern untuk pasangan kontemporer' },
+    { id: 'floral-romantic', name: 'Floral Romantic', colors: ['#E8B4B8', '#FFF5F7', '#C48B9F'], description: 'Romantis dengan sentuhan bunga-bunga' },
+  { id: 'classic-elegant', name: 'Classic Elegant', colors: ['#D4A843', '#F5F0E8', '#2C2C2C'], description: 'Timeless & sophisticated dengan timeline vertikal' }
+  ]
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* TOP NAVBAR */}
+      <nav className="sticky top-0 bg-white/80 backdrop-blur-xl border-b border-white/20 shadow-lg shadow-black/5 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#D4AF37] via-[#E5C158] to-[#C19B2E] rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg shadow-[#D4AF37]/30">
+                <Heart className="w-5 h-5 text-white fill-white" />
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">kaundang.id</span>
+            </Link>
+
+            <Link
+              href="/my-invitations"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-gray-200 hover:border-[#D4AF37] text-gray-700 hover:text-[#D4AF37] font-medium rounded-full transition-all hover:scale-105"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="hidden sm:inline">Kembali</span>
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#D4AF37]/10 to-[#E5C158]/10 rounded-full mb-4">
+            <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+            <span className="text-sm font-semibold text-[#D4AF37]">Buat Undangan Baru</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Undangan Pernikahan Digital</h1>
+          <p className="text-lg text-gray-600">Isi form di bawah untuk membuat undangan Anda</p>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* SECTION 1: Couple Info */}
+          <div className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-[#D4AF37] via-[#E5C158] to-[#C19B2E] rounded-2xl opacity-20 group-hover:opacity-30 blur transition-all duration-500"></div>
+            
+            <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 p-6 sm:p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#D4AF37] to-[#C19B2E] rounded-xl flex items-center justify-center">
+                  <Users className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">Informasi Mempelai</h2>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Bride */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-gray-700 text-lg">Mempelai Wanita</h3>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Nama Panggilan *</label>
+                    <input
+                      type="text"
+                      value={brideName}
+                      onChange={(e) => setBrideName(e.target.value)}
+                      placeholder="Contoh: Siti"
+                      required
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#D4AF37] transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Nama Lengkap *</label>
+                    <input
+                      type="text"
+                      value={brideFullname}
+                      onChange={(e) => setBrideFullname(e.target.value)}
+                      placeholder="Contoh: Siti Nurhaliza binti Ahmad"
+                      required
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#D4AF37] transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Putri dari *</label>
+                    <input
+                      type="text"
+                      value={brideParents}
+                      onChange={(e) => setBrideParents(e.target.value)}
+                      placeholder="Bapak Ahmad & Ibu Fatimah"
+                      required
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#D4AF37] transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Groom */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-gray-700 text-lg">Mempelai Pria</h3>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Nama Panggilan *</label>
+                    <input
+                      type="text"
+                      value={groomName}
+                      onChange={(e) => setGroomName(e.target.value)}
+                      placeholder="Contoh: Reza"
+                      required
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#D4AF37] transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Nama Lengkap *</label>
+                    <input
+                      type="text"
+                      value={groomFullname}
+                      onChange={(e) => setGroomFullname(e.target.value)}
+                      placeholder="Contoh: Muhammad Reza bin Abdullah"
+                      required
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#D4AF37] transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Putra dari *</label>
+                    <input
+                      type="text"
+                      value={groomParents}
+                      onChange={(e) => setGroomParents(e.target.value)}
+                      placeholder="Bapak Abdullah & Ibu Aminah"
+                      required
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#D4AF37] transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} style={{
-            background: '#fff',
-            padding: '2.5rem',
-            border: '1px solid rgba(201,165,87,0.2)'
-          }}>
-            {/* Mempelai Pria */}
-            <div style={{ marginBottom: '2.5rem' }}>
-              <h2 style={{
-                fontSize: '1.3rem',
-                fontWeight: 600,
-                color: '#C9A557',
-                marginBottom: '1.5rem',
-                paddingBottom: '0.5rem',
-                borderBottom: '2px solid rgba(201,165,87,0.2)'
-              }}>
-                👰 Mempelai Wanita
-              </h2>
-              
-              <div style={{ marginBottom: '1.2rem' }}>
-                <label style={labelStyle}>Nama Panggilan</label>
-                <input
-                  type="text"
-                  name="bride_name"
-                  value={formData.bride_name}
-                  onChange={handleChange}
-                  placeholder="Contoh: Siti"
-                  required
-                  style={inputStyle}
-                />
-              </div>
-
-              <div style={{ marginBottom: '1.2rem' }}>
-                <label style={labelStyle}>Nama Lengkap</label>
-                <input
-                  type="text"
-                  name="bride_fullname"
-                  value={formData.bride_fullname}
-                  onChange={handleChange}
-                  placeholder="Contoh: Siti Nurhaliza Putri, S.Pd"
-                  required
-                  style={inputStyle}
-                />
-              </div>
-
-              <div style={{ marginBottom: '1.2rem' }}>
-                <label style={labelStyle}>Nama Orang Tua</label>
-                <textarea
-                  name="bride_parents"
-                  value={formData.bride_parents}
-                  onChange={handleChange}
-                  placeholder="Bapak H. Ahmad Fauzi & Ibu Hj. Rahmawati"
-                  required
-                  rows={2}
-                  style={{...inputStyle, resize: 'vertical'}}
-                />
-              </div>
-            </div>
-
-            {/* Mempelai Wanita */}
-            <div style={{ marginBottom: '2.5rem' }}>
-              <h2 style={{
-                fontSize: '1.3rem',
-                fontWeight: 600,
-                color: '#C9A557',
-                marginBottom: '1.5rem',
-                paddingBottom: '0.5rem',
-                borderBottom: '2px solid rgba(201,165,87,0.2)'
-              }}>
-                🤵 Mempelai Pria
-              </h2>
-              
-              <div style={{ marginBottom: '1.2rem' }}>
-                <label style={labelStyle}>Nama Panggilan</label>
-                <input
-                  type="text"
-                  name="groom_name"
-                  value={formData.groom_name}
-                  onChange={handleChange}
-                  placeholder="Contoh: Reza"
-                  required
-                  style={inputStyle}
-                />
-              </div>
-
-              <div style={{ marginBottom: '1.2rem' }}>
-                <label style={labelStyle}>Nama Lengkap</label>
-                <input
-                  type="text"
-                  name="groom_fullname"
-                  value={formData.groom_fullname}
-                  onChange={handleChange}
-                  placeholder="Contoh: Muhammad Reza Pratama, S.T"
-                  required
-                  style={inputStyle}
-                />
-              </div>
-
-              <div style={{ marginBottom: '1.2rem' }}>
-                <label style={labelStyle}>Nama Orang Tua</label>
-                <textarea
-                  name="groom_parents"
-                  value={formData.groom_parents}
-                  onChange={handleChange}
-                  placeholder="Bapak H. Bambang Susilo & Ibu Hj. Sri Wahyuni"
-                  required
-                  rows={2}
-                  style={{...inputStyle, resize: 'vertical'}}
-                />
-              </div>
-            </div>
-
-            {/* Akad Nikah */}
-            <div style={{ marginBottom: '2.5rem' }}>
-              <h2 style={{
-                fontSize: '1.3rem',
-                fontWeight: 600,
-                color: '#C9A557',
-                marginBottom: '1.5rem',
-                paddingBottom: '0.5rem',
-                borderBottom: '2px solid rgba(201,165,87,0.2)'
-              }}>
-                🕌 Akad Nikah
-              </h2>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.2rem' }}>
-                <div>
-                  <label style={labelStyle}>Tanggal</label>
-                  <input
-                    type="text"
-                    name="akad_date"
-                    value={formData.akad_date}
-                    onChange={handleChange}
-                    placeholder="Sabtu, 15 Maret 2025"
-                    required
-                    style={inputStyle}
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>Waktu</label>
-                  <input
-                    type="text"
-                    name="akad_time"
-                    value={formData.akad_time}
-                    onChange={handleChange}
-                    placeholder="08.00 - 10.00 WIB"
-                    required
-                    style={inputStyle}
-                  />
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '1.2rem' }}>
-                <label style={labelStyle}>Nama Lokasi</label>
-                <input
-                  type="text"
-                  name="akad_venue"
-                  value={formData.akad_venue}
-                  onChange={handleChange}
-                  placeholder="Masjid Al-Ikhlas"
-                  required
-                  style={inputStyle}
-                />
-              </div>
-
-              <div style={{ marginBottom: '1.2rem' }}>
-                <label style={labelStyle}>Alamat Lengkap</label>
-                <textarea
-                  name="akad_address"
-                  value={formData.akad_address}
-                  onChange={handleChange}
-                  placeholder="Jl. Sudirman No. 12, Jakarta Pusat"
-                  required
-                  rows={2}
-                  style={{...inputStyle, resize: 'vertical'}}
-                />
-              </div>
-            </div>
-
-            {/* Resepsi */}
-            <div style={{ marginBottom: '2.5rem' }}>
-              <h2 style={{
-                fontSize: '1.3rem',
-                fontWeight: 600,
-                color: '#C9A557',
-                marginBottom: '1.5rem',
-                paddingBottom: '0.5rem',
-                borderBottom: '2px solid rgba(201,165,87,0.2)'
-              }}>
-                🌸 Resepsi
-              </h2>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.2rem' }}>
-                <div>
-                  <label style={labelStyle}>Tanggal</label>
-                  <input
-                    type="text"
-                    name="resepsi_date"
-                    value={formData.resepsi_date}
-                    onChange={handleChange}
-                    placeholder="Sabtu, 15 Maret 2025"
-                    required
-                    style={inputStyle}
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>Waktu</label>
-                  <input
-                    type="text"
-                    name="resepsi_time"
-                    value={formData.resepsi_time}
-                    onChange={handleChange}
-                    placeholder="11.00 - 15.00 WIB"
-                    required
-                    style={inputStyle}
-                  />
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '1.2rem' }}>
-                <label style={labelStyle}>Nama Lokasi</label>
-                <input
-                  type="text"
-                  name="resepsi_venue"
-                  value={formData.resepsi_venue}
-                  onChange={handleChange}
-                  placeholder="Gedung Sasana Budaya"
-                  required
-                  style={inputStyle}
-                />
-              </div>
-
-              <div style={{ marginBottom: '1.2rem' }}>
-                <label style={labelStyle}>Alamat Lengkap</label>
-                <textarea
-                  name="resepsi_address"
-                  value={formData.resepsi_address}
-                  onChange={handleChange}
-                  placeholder="Jl. Gatot Subroto Kav. 5, Jakarta"
-                  required
-                  rows={2}
-                  style={{...inputStyle, resize: 'vertical'}}
-                />
-              </div>
-            </div>
-
-            {/* Music */}
-            <div style={{ marginBottom: '2.5rem' }}>
-              <h2 style={{
-                fontSize: '1.3rem',
-                fontWeight: 600,
-                color: '#C9A557',
-                marginBottom: '1.5rem',
-                paddingBottom: '0.5rem',
-                borderBottom: '2px solid rgba(201,165,87,0.2)'
-              }}>
-                🎵 Background Music (Opsional)
-              </h2>
-              
-              <div style={{ marginBottom: '1.2rem' }}>
-                <label style={labelStyle}>URL Musik</label>
-                <input
-                  type="url"
-                  name="music_url"
-                  value={formData.music_url}
-                  onChange={handleChange}
-                  placeholder="https://example.com/song.mp3 atau YouTube URL"
-                  style={inputStyle}
-                />
-                <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>
-                  Kosongkan jika tidak ingin menambahkan musik. Bisa pakai link MP3 atau YouTube.
-                </p>
-              </div>
-            </div>
+          {/* SECTION 2: Event Details - Akad */}
+          <div className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 rounded-2xl opacity-20 group-hover:opacity-30 blur transition-all duration-500"></div>
             
-            {/* NEW: Template Selection */}
-            <div style={{ marginBottom: '2.5rem' }}>
-              <h2 style={{
-                fontSize: '1.3rem',
-                fontWeight: 600,
-                color: '#C9A557',
-                marginBottom: '1.5rem',
-                paddingBottom: '0.5rem',
-                borderBottom: '2px solid rgba(201,165,87,0.2)'
-              }}>
-                🎨 Pilih Template
-              </h2>
-              
-              <div style={{ marginBottom: '1.2rem' }}>
-                <label style={labelStyle}>Template Undangan</label>
-                <select
-                  name="template"
-                  value={formData.template}
-                  onChange={handleChange}
-                  style={inputStyle}
-                >
-                  <option value="gold-cream">Gold & Cream (Elegant Classic)</option>
-                  <option value="modern-minimal">Modern Minimalist (Clean & Simple)</option>
-                  <option value="floral-romantic">Floral Romantic (Soft & Sweet)</option>
-                </select>
-                <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>
-                  Pilih tema yang sesuai dengan style pernikahan Anda
-                </p>
+            <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 p-6 sm:p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">Acara Akad Nikah</h2>
               </div>
 
-              {/* Template Preview Cards */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                gap: '1rem',
-                marginTop: '1.5rem'
-              }}>
-                {[
-                  { id: 'gold-cream', name: 'Gold & Cream', color: '#C9A557', bg: '#FAF6EE' },
-                  { id: 'modern-minimal', name: 'Modern Minimal', color: '#1a1a1a', bg: '#f5f5f5' },
-                  { id: 'floral-romantic', name: 'Floral Romantic', color: '#ff9eb7', bg: '#fef8f5' }
-                ].map((template) => (
-                  <div
-                    key={template.id}
-                    onClick={() => setFormData({ ...formData, template: template.id })}
-                    style={{
-                      padding: '1.5rem',
-                      background: template.bg,
-                      border: formData.template === template.id ? `3px solid ${template.color}` : '1px solid #ddd',
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                      transition: 'all 0.3s',
-                      borderRadius: '8px'
-                    }}
-                  >
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      background: template.color,
-                      margin: '0 auto 0.8rem'
-                    }}></div>
-                    <div style={{
-                      fontSize: '0.85rem',
-                      fontWeight: formData.template === template.id ? 600 : 400,
-                      color: template.color
-                    }}>
-                      {template.name}
-                    </div>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tanggal *</label>
+                  <input
+                    type="text"
+                    value={akadDate}
+                    onChange={(e) => setAkadDate(e.target.value)}
+                    placeholder="Sabtu, 15 Maret 2025"
+                    required
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#D4AF37] transition-all"
+                  />
+                </div>
 
-                    {/* NEW: Preview Button */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setPreviewTemplate(template.id)
-                      setShowPreview(true)
-                    }}
-                    style={{
-                      padding: '0.4rem 0.8rem',
-                      background: template.color,
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '4px',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer',
-                      marginTop: '0.3rem'
-                    }}
-                  >
-                    👁️ Preview
-                  </button>
-
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Waktu *</label>
+                  <div className="relative">
+                    <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={akadTime}
+                      onChange={(e) => setAkadTime(e.target.value)}
+                      placeholder="09:00 - 11:00 WIB"
+                      required
+                      className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#D4AF37] transition-all"
+                    />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Lokasi *</label>
+                  <input
+                    type="text"
+                    value={akadVenue}
+                    onChange={(e) => setAkadVenue(e.target.value)}
+                    placeholder="Masjid Al-Ikhlas"
+                    required
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#D4AF37] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Alamat Lengkap *</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-4 w-5 h-5 text-gray-400" />
+                    <textarea
+                      value={akadAddress}
+                      onChange={(e) => setAkadAddress(e.target.value)}
+                      placeholder="Jl. Merdeka No. 123, Jakarta Selatan"
+                      required
+                      rows={3}
+                      className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#D4AF37] transition-all resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 3: Event Details - Resepsi */}
+          <div className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-500 rounded-2xl opacity-20 group-hover:opacity-30 blur transition-all duration-500"></div>
+            
+            <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 p-6 sm:p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">Acara Resepsi</h2>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tanggal *</label>
+                  <input
+                    type="text"
+                    value={resepsiDate}
+                    onChange={(e) => setResepsiDate(e.target.value)}
+                    placeholder="Sabtu, 15 Maret 2025"
+                    required
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#D4AF37] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Waktu *</label>
+                  <div className="relative">
+                    <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={resepsiTime}
+                      onChange={(e) => setResepsiTime(e.target.value)}
+                      placeholder="18:00 - 21:00 WIB"
+                      required
+                      className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#D4AF37] transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Lokasi *</label>
+                  <input
+                    type="text"
+                    value={resepsiVenue}
+                    onChange={(e) => setResepsiVenue(e.target.value)}
+                    placeholder="Gedung Graha Wisata"
+                    required
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#D4AF37] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Alamat Lengkap *</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-4 w-5 h-5 text-gray-400" />
+                    <textarea
+                      value={resepsiAddress}
+                      onChange={(e) => setResepsiAddress(e.target.value)}
+                      placeholder="Jl. Sudirman No. 456, Jakarta Pusat"
+                      required
+                      rows={3}
+                      className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#D4AF37] transition-all resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 4: Media */}
+          <div className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-green-500 via-emerald-500 to-green-500 rounded-2xl opacity-20 group-hover:opacity-30 blur transition-all duration-500"></div>
+            
+            <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 p-6 sm:p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+                  <Music className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">Media & Musik</h2>
+              </div>
+
+              <div className="space-y-6">
+                {/* Music URL */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Link Musik Latar (Opsional)</label>
+                  <input
+                    type="url"
+                    value={musicUrl}
+                    onChange={(e) => setMusicUrl(e.target.value)}
+                    placeholder="https://example.com/music.mp3"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#D4AF37] transition-all"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">Upload file musik ke hosting (Google Drive, Dropbox, dll) dan paste link-nya di sini</p>
+                </div>
+
+                {/* Photo Upload */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Foto Gallery (Opsional)</label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-[#D4AF37] transition-all">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                      id="photo-upload"
+                    />
+                    <label htmlFor="photo-upload" className="cursor-pointer">
+                      <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-600 font-medium mb-1">Click untuk upload foto</p>
+                      <p className="text-sm text-gray-500">PNG, JPG hingga 10MB (maksimal 10 foto)</p>
+                    </label>
+                  </div>
+
+                  {/* Photo Preview */}
+                  {photos.length > 0 && (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 mt-4">
+                      {photos.map((photo, index) => (
+                        <div key={index} className="relative group">
+                          <img src={photo} alt={`Photo ${index + 1}`} className="w-full h-24 object-cover rounded-lg" />
+                          <button
+                            type="button"
+                            onClick={() => removePhoto(index)}
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 5: Template */}
+          <div className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 rounded-2xl opacity-20 group-hover:opacity-30 blur transition-all duration-500"></div>
+            
+            <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 p-6 sm:p-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center">
+                    <Palette className="w-5 h-5 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900">Pilih Template</h2>
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-3 gap-4">
+                {templates.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setTemplate(t.id)}
+                    className={`relative p-6 rounded-xl border-2 transition-all ${
+                      template === t.id
+                        ? 'border-[#D4AF37] bg-gradient-to-br from-[#D4AF37]/10 to-[#E5C158]/10'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex gap-2 mb-3">
+                      {t.colors.map((color, i) => (
+                        <div
+                          key={i}
+                          className="w-8 h-8 rounded-full border-2 border-white shadow-md"
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                    <h3 className="font-bold text-gray-900 mb-1">{t.name}</h3>
+                    <p className="text-sm text-gray-600">{t.description}</p>
+                    
+                    {template === t.id && (
+                      <div className="absolute top-3 right-3 w-6 h-6 bg-[#D4AF37] rounded-full flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                  </button>
                 ))}
               </div>
             </div>
-            
-            
-            {/* Photo Gallery */}
-            <div style={{ marginBottom: '2.5rem' }}>
-              <h2 style={{
-                fontSize: '1.3rem',
-                fontWeight: 600,
-                color: '#C9A557',
-                marginBottom: '1.5rem',
-                paddingBottom: '0.5rem',
-                borderBottom: '2px solid rgba(201,165,87,0.2)'
-              }}>
-                📸 Galeri Foto (Opsional)
-              </h2>
-              
-              <div style={{ marginBottom: '1.2rem' }}>
-                <label style={labelStyle}>Upload Foto (Max 10 foto)</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files || [])
-                    if (files.length > 10) {
-                      alert('Maksimal 10 foto')
-                      return
-                    }
-                    setPhotos(files)
-                  }}
-                  style={inputStyle}
-                />
-                <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>
-                  Upload foto pre-wedding atau foto pasangan (JPG, PNG). Maksimal 10 foto.
-                </p>
-                
-                {photos.length > 0 && (
-                  <div style={{
-                    marginTop: '1rem',
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
-                    gap: '0.5rem'
-                  }}>
-                    {photos.map((photo, i) => (
-                      <div key={i} style={{
-                        position: 'relative',
-                        paddingBottom: '100%',
-                        background: '#f5f5f5',
-                        borderRadius: '4px',
-                        overflow: 'hidden'
-                      }}>
-                        <img
-                          src={URL.createObjectURL(photo)}
-                          alt={`Preview ${i + 1}`}
-                          style={{
-                            position: 'absolute',
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover'
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
+          </div>
+
+          {/* Submit Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              type="submit"
+              disabled={saving}
+              className="group/btn relative flex-1 px-8 py-4 bg-gradient-to-r from-[#D4AF37] via-[#E5C158] to-[#C19B2E] text-white font-bold text-lg rounded-xl shadow-lg shadow-[#D4AF37]/40 hover:shadow-xl hover:shadow-[#D4AF37]/50 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700"></div>
+              <div className="relative z-10 flex items-center justify-center gap-3">
+                {saving ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Menyimpan...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-6 h-6" />
+                    <span>Buat Undangan</span>
+                  </>
                 )}
               </div>
-            </div>
-
-            {/* Submit */}
-            <div style={{
-              display: 'flex',
-              gap: '1rem',
-              justifyContent: 'flex-end'
-            }}>
-              <Link
-                href="/"
-                style={{
-                  padding: '1rem 2rem',
-                  background: 'transparent',
-                  border: '1px solid #ccc',
-                  color: '#666',
-                  textDecoration: 'none',
-                  fontSize: '0.95rem',
-                  fontWeight: 500
-                }}
-              >
-                Batal
-              </Link>
-              <button
-              type="submit"
-              disabled={loading}
-              style={{
-                padding: '1rem 2rem',
-                background: '#C9A557',
-                border: 'none',
-                color: '#fff',
-                fontSize: '0.95rem',
-                fontWeight: 600,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.6 : 1
-              }}
-            >
-              {uploadingPhotos ? 'Uploading photos...' : loading ? 'Menyimpan...' : 'Buat Undangan'}
             </button>
-            </div>
-          </form>
-        </div>
-       {/* Preview Modal */}
-      {showPreview && (
-        <TemplatePreview 
-          template={previewTemplate}
-          onClose={() => setShowPreview(false)}
-        />
-      )}
+
+            <Link
+              href="/my-invitations"
+              className="flex-shrink-0 px-8 py-4 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-semibold text-lg rounded-xl transition-all hover:scale-[1.02] text-center"
+            >
+              Batal
+            </Link>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }
-
-  
-  const labelStyle = {
-    display: 'block',
-    fontSize: '0.85rem',
-    color: '#3D2E0F',
-    marginBottom: '0.5rem',
-    fontWeight: 500
-  }
-
-  const inputStyle = {
-    width: '100%',
-    padding: '0.9rem 1rem',
-    border: '1px solid rgba(201,165,87,0.3)',
-    fontSize: '0.95rem',
-    outline: 'none'
-  }

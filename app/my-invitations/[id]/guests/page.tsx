@@ -4,6 +4,7 @@ import { supabase } from '../../../lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import * as XLSX from 'xlsx'
+import { Heart, ArrowLeft, Upload, Download, Copy, Send, Search, Filter, Users, CheckCircle2, Eye, Clock, ExternalLink, Trash2 } from 'lucide-react'
 
 export default function GuestListPage() {
   const router = useRouter()
@@ -16,14 +17,30 @@ export default function GuestListPage() {
   const [guests, setGuests] = useState<any[]>([])
   const [importing, setImporting] = useState(false)
 
-  // NEW: Search & Filter states
-const [searchQuery, setSearchQuery] = useState('')
-const [filterStatus, setFilterStatus] = useState('all')
-const [filteredGuests, setFilteredGuests] = useState<any[]>([])
+  // Search & Filter states
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [filteredGuests, setFilteredGuests] = useState<any[]>([])
 
   useEffect(() => {
     checkUserAndFetch()
   }, [])
+
+  useEffect(() => {
+    let result = [...guests]
+    
+    if (searchQuery) {
+      result = result.filter(guest => 
+        guest.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    }
+    
+    if (filterStatus !== 'all') {
+      result = result.filter(guest => guest.status === filterStatus)
+    }
+    
+    setFilteredGuests(result)
+  }, [guests, searchQuery, filterStatus])
 
   const checkUserAndFetch = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -31,29 +48,9 @@ const [filteredGuests, setFilteredGuests] = useState<any[]>([])
       router.push('/login')
       return
     }
-    
-  // NEW: Filter logic
-useEffect(() => {
-  let result = [...guests]
-  
-  // Search by name
-  if (searchQuery) {
-    result = result.filter(guest => 
-      guest.name.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  }
-  
-  // Filter by status
-  if (filterStatus !== 'all') {
-    result = result.filter(guest => guest.status === filterStatus)
-  }
-  
-  setFilteredGuests(result)
-}, [guests, searchQuery, filterStatus])
 
     setUser(user)
     
-    // Fetch invitation
     const { data: invData } = await supabase
       .from('invitations')
       .select('*')
@@ -68,7 +65,6 @@ useEffect(() => {
     
     setInvitation(invData)
     
-    // Fetch guest list
     const { data: guestData } = await supabase
       .from('guest_list')
       .select('*')
@@ -98,7 +94,6 @@ useEffect(() => {
       const sheet = workbook.Sheets[sheetName]
       const rows = XLSX.utils.sheet_to_json(sheet) as any[]
       
-      // Import guests
       const guestsToInsert = rows.map((row: any) => ({
         invitation_id: invitationId,
         name: row.name || row.nama || row.Name || row.Nama,
@@ -143,7 +138,6 @@ useEffect(() => {
     XLSX.writeFile(wb, `GuestList_${invitation.bride_name}_${invitation.groom_name}.xlsx`)
   }
 
-// NEW: Copy All Links Function
   const handleCopyAllLinks = () => {
     const allLinks = guests.map((guest) => {
       const link = `${window.location.origin}/undangan/${invitation.slug}?guest=${guest.personalized_code}`
@@ -151,15 +145,6 @@ useEffect(() => {
     }).join('\n')
     
     navigator.clipboard.writeText(allLinks).then(() => {
-      alert(`✅ ${guests.length} links berhasil di-copy!\n\nFormat:\nNama - Link\n\nPaste di Notes/Excel untuk kirim via WhatsApp!`)
-    }).catch(() => {
-      // Fallback for older browsers
-      const textarea = document.createElement('textarea')
-      textarea.value = allLinks
-      document.body.appendChild(textarea)
-      textarea.select()
-      document.execCommand('copy')
-      document.body.removeChild(textarea)
       alert(`✅ ${guests.length} links berhasil di-copy!`)
     })
   }
@@ -200,384 +185,182 @@ Wassalamualaikum Wr. Wb.`
 
   if (loading) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#FAF6EE',
-        color: '#C9A557'
-      }}>
-        Loading...
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-[#D4AF37] via-[#E5C158] to-[#C19B2E] rounded-2xl flex items-center justify-center animate-pulse mx-auto mb-4">
+            <Heart className="w-8 h-8 text-white fill-white" />
+          </div>
+          <p className="text-[#D4AF37] font-semibold">Loading...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#FAF6EE',
-      padding: '3rem 2rem'
-    }}>
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto'
-      }}>
-        {/* Header */}
-        <div style={{
-          marginBottom: '2rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1rem'
-        }}>
-          <div>
-            <Link href={`/my-invitations/${invitationId}`} style={{
-              color: '#C9A557',
-              textDecoration: 'none',
-              fontSize: '0.9rem',
-              marginBottom: '0.5rem',
-              display: 'block'
-            }}>
-              ← Kembali ke Dashboard
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <nav className="sticky top-0 bg-white/80 backdrop-blur-xl border-b border-white/20 shadow-lg shadow-black/5 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#D4AF37] via-[#E5C158] to-[#C19B2E] rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg shadow-[#D4AF37]/30">
+                <Heart className="w-5 h-5 text-white fill-white" />
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">kaundang.id</span>
             </Link>
-            <h1 style={{
-              fontSize: '2rem',
-              fontWeight: 700,
-              color: '#1C150A',
-              marginBottom: '0.5rem'
-            }}>
-              Guest List Management
-            </h1>
-            <p style={{ color: '#666', fontSize: '0.95rem' }}>
-              {invitation.bride_name} & {invitation.groom_name}
-            </p>
-          </div>
 
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <label style={{
-              padding: '0.8rem 1.5rem',
-              background: '#10B981',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              border: 'none',
-              borderRadius: '4px'
-            }}>
-              {importing ? 'Importing...' : '📥 Import CSV'}
-              <input
-                type="file"
-                accept=".csv,.xlsx,.xls"
-                onChange={handleCSVImport}
-                disabled={importing}
-                style={{ display: 'none' }}
-              />
-            </label>
-
-            <button
-              onClick={handleExportCSV}
-              disabled={guests.length === 0}
-              style={{
-                padding: '0.8rem 1.5rem',
-                background: guests.length === 0 ? '#ccc' : '#3B82F6',
-                color: '#fff',
-                cursor: guests.length === 0 ? 'not-allowed' : 'pointer',
-                fontSize: '0.9rem',
-                fontWeight: 500,
-                border: 'none',
-                borderRadius: '4px'
-              }}
+            <Link
+              href={`/my-invitations/${invitationId}`}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-gray-200 hover:border-[#D4AF37] text-gray-700 hover:text-[#D4AF37] font-medium rounded-full transition-all hover:scale-105"
             >
-              📤 Export CSV
-            </button>
+              <ArrowLeft className="w-5 h-5" />
+              <span className="hidden sm:inline">Kembali</span>
+            </Link>
           </div>
         </div>
-        
-         {/* NEW: Copy All Links Button */}
-            <button
-              onClick={handleCopyAllLinks}
-              disabled={guests.length === 0}
-              style={{
-                padding: '0.8rem 1.5rem',
-                background: guests.length === 0 ? '#ccc' : '#F59E0B',
-                color: '#fff',
-                cursor: guests.length === 0 ? 'not-allowed' : 'pointer',
-                fontSize: '0.9rem',
-                fontWeight: 500,
-                border: 'none',
-                borderRadius: '4px'
-              }}
-            >
-              📋 Copy All Links
-            </button>
+      </nav>
 
-        {/* Stats */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '1.5rem',
-          marginBottom: '2rem'
-        }}>
-          <div style={{
-            background: '#fff',
-            padding: '1.5rem',
-            border: '1px solid rgba(201,165,87,0.2)',
-            borderRadius: '8px'
-          }}>
-            <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '0.5rem' }}>
-              Total Tamu
-            </div>
-            <div style={{ fontSize: '2rem', fontWeight: 700, color: '#C9A557' }}>
-              {guests.length}
-            </div>
-          </div>
-
-          <div style={{
-            background: '#fff',
-            padding: '1.5rem',
-            border: '1px solid rgba(201,165,87,0.2)',
-            borderRadius: '8px'
-          }}>
-            <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '0.5rem' }}>
-              Belum Buka
-            </div>
-            <div style={{ fontSize: '2rem', fontWeight: 700, color: '#666' }}>
-              {guests.filter(g => g.status === 'pending').length}
-            </div>
-          </div>
-
-          <div style={{
-            background: '#fff',
-            padding: '1.5rem',
-            border: '1px solid rgba(201,165,87,0.2)',
-            borderRadius: '8px'
-          }}>
-            <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '0.5rem' }}>
-              Sudah Buka
-            </div>
-            <div style={{ fontSize: '2rem', fontWeight: 700, color: '#3B82F6' }}>
-              {guests.filter(g => g.status === 'opened').length}
-            </div>
-          </div>
-
-          <div style={{
-            background: '#fff',
-            padding: '1.5rem',
-            border: '1px solid rgba(201,165,87,0.2)',
-            borderRadius: '8px'
-          }}>
-            <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '0.5rem' }}>
-              Sudah RSVP
-            </div>
-            <div style={{ fontSize: '2rem', fontWeight: 700, color: '#10B981' }}>
-              {guests.filter(g => g.status === 'rsvp_done').length}
-            </div>
-          </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Guest List Management</h1>
+          <p className="text-lg text-gray-600">{invitation.bride_name} & {invitation.groom_name}</p>
         </div>
 
-        {/* Guest Table */}
-        <div style={{
-          background: '#fff',
-          border: '1px solid rgba(201,165,87,0.2)',
-          borderRadius: '8px',
-          overflow: 'hidden'
-        }}>
-          <div style={{
-            padding: '1.5rem',
-            borderBottom: '1px solid rgba(201,165,87,0.2)',
-            background: '#faf6ee'
-          }}>
-            <h2 style={{
-              fontSize: '1.2rem',
-              fontWeight: 600,
-              color: '#1C150A'
-            }}>
-              Daftar Tamu ({guests.length})
-            </h2>
-          </div>
+        <div className="flex flex-wrap gap-3 mb-8">
+          <label className="group relative inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 cursor-pointer overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+            <Upload className="w-5 h-5 relative z-10" />
+            <span className="relative z-10">{importing ? 'Importing...' : 'Import CSV'}</span>
+            <input type="file" accept=".csv,.xlsx,.xls" onChange={handleCSVImport} disabled={importing} className="hidden" />
+          </label>
 
-                      {/* NEW: Search & Filter Bar */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr auto',
-              gap: '1rem',
-              marginTop: '1rem'
-            }}>
-              {/* Search Input */}
-              <input
-                type="text"
-                placeholder="🔍 Cari nama tamu..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  padding: '0.7rem 1rem',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  fontSize: '0.9rem',
-                  outline: 'none'
-                }}
-              />
+          <button onClick={handleExportCSV} disabled={guests.length === 0} className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+            <Download className="w-5 h-5" />
+            <span>Export CSV</span>
+          </button>
 
-              {/* Filter Dropdown */}
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                style={{
-                  padding: '0.7rem 1rem',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  fontSize: '0.9rem',
-                  outline: 'none',
-                  cursor: 'pointer',
-                  minWidth: '200px'
-                }}
-              >
-                <option value="all">📊 Semua Status ({guests.length})</option>
-                <option value="pending">⏳ Belum Buka ({guests.filter(g => g.status === 'pending').length})</option>
-                <option value="opened">👁️ Sudah Buka ({guests.filter(g => g.status === 'opened').length})</option>
-                <option value="rsvp_done">✅ Sudah RSVP ({guests.filter(g => g.status === 'rsvp_done').length})</option>
-              </select>
+          <button onClick={handleCopyAllLinks} disabled={guests.length === 0} className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+            <Copy className="w-5 h-5" />
+            <span>Copy All Links</span>
+          </button>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[
+            { label: 'Total Tamu', value: guests.length, icon: Users, color: 'from-[#D4AF37] to-[#C19B2E]', bgColor: 'from-[#FFF8F0] to-[#FFE5D9]' },
+            { label: 'Belum Buka', value: guests.filter(g => g.status === 'pending').length, icon: Clock, color: 'from-gray-500 to-gray-600', bgColor: 'from-gray-50 to-gray-100' },
+            { label: 'Sudah Buka', value: guests.filter(g => g.status === 'opened').length, icon: Eye, color: 'from-blue-500 to-blue-600', bgColor: 'from-blue-50 to-blue-100' },
+            { label: 'Sudah RSVP', value: guests.filter(g => g.status === 'rsvp_done').length, icon: CheckCircle2, color: 'from-green-500 to-green-600', bgColor: 'from-green-50 to-green-100' },
+          ].map((stat, index) => {
+            const Icon = stat.icon
+            return (
+              <div key={index} className="group relative">
+                <div className={`absolute -inset-0.5 bg-gradient-to-r ${stat.color} rounded-2xl opacity-0 group-hover:opacity-100 blur transition-all duration-500`}></div>
+                <div className={`relative bg-gradient-to-br ${stat.bgColor} p-6 rounded-2xl border border-gray-100`}>
+                  <div className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center shadow-lg mb-4`}>
+                    <Icon className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="text-sm text-gray-600 font-medium mb-1">{stat.label}</p>
+                  <p className="text-4xl font-bold text-gray-900">{stat.value}</p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="relative">
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-[#D4AF37] via-[#E5C158] to-[#A8C5A9] rounded-2xl opacity-20 blur"></div>
+          
+          <div className="relative bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden">
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-5 border-b border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900">Daftar Tamu ({filteredGuests.length})</h2>
             </div>
 
-            {/* Clear Filters Button */}
-            {(searchQuery || filterStatus !== 'all') && (
-              <button
-                onClick={() => {
-                  setSearchQuery('')
-                  setFilterStatus('all')
-                }}
-                style={{
-                  marginTop: '0.8rem',
-                  padding: '0.5rem 1rem',
-                  background: '#f3f4f6',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer'
-                }}
-              >
-                ✕ Clear Filters
-              </button>
-            )} 
+            <div className="p-6 border-b border-gray-100 space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input type="text" placeholder="Cari nama tamu..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-[#D4AF37] transition-colors" />
+                </div>
 
-          {filteredGuests.length === 0 ? (
-            <div style={{
-              padding: '3rem',
-              textAlign: 'center',
-              color: '#666'
-            }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📋</div>
-              <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-                Belum ada tamu
-              </p>
-              <p style={{ fontSize: '0.9rem', color: '#999' }}>
-                Import CSV untuk menambahkan daftar tamu
-              </p>
+                <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-[#D4AF37] transition-colors cursor-pointer">
+                  <option value="all">📊 Semua Status ({guests.length})</option>
+                  <option value="pending">⏳ Belum Buka ({guests.filter(g => g.status === 'pending').length})</option>
+                  <option value="opened">👁️ Sudah Buka ({guests.filter(g => g.status === 'opened').length})</option>
+                  <option value="rsvp_done">✅ Sudah RSVP ({guests.filter(g => g.status === 'rsvp_done').length})</option>
+                </select>
+              </div>
+
+              {(searchQuery || filterStatus !== 'all') && (
+                <button onClick={() => { setSearchQuery(''); setFilterStatus('all') }} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm transition-colors">
+                  ✕ Clear Filters
+                </button>
+              )}
             </div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{
-                width: '100%',
-                borderCollapse: 'collapse'
-              }}>
-                <thead>
-                  <tr style={{
-                    background: '#f5f5f5',
-                    borderBottom: '2px solid rgba(201,165,87,0.2)'
-                  }}>
-                    <th style={thStyle}>No</th>
-                    <th style={thStyle}>Nama</th>
-                    <th style={thStyle}>No HP</th>
-                    <th style={thStyle}>Jumlah</th>
-                    <th style={thStyle}>Status</th>
-                    <th style={thStyle}>Link</th>
-                    <th style={thStyle}>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredGuests.map((guest, index) => (
-                    <tr key={guest.id} style={{
-                      borderBottom: '1px solid #f0f0f0'
-                    }}>
-                      <td style={tdStyle}>{index + 1}</td>
-                      <td style={tdStyle}>{guest.name}</td>
-                      <td style={tdStyle}>{guest.phone || '-'}</td>
-                      <td style={tdStyle}>{guest.guest_count}</td>
-                      <td style={tdStyle}>
-                        <span style={{
-                          padding: '0.3rem 0.8rem',
-                          borderRadius: '12px',
-                          fontSize: '0.75rem',
-                          fontWeight: 500,
-                          background: guest.status === 'pending' ? '#f3f4f6' :
-                                     guest.status === 'opened' ? '#dbeafe' : '#d1fae5',
-                          color: guest.status === 'pending' ? '#6b7280' :
-                                guest.status === 'opened' ? '#1e40af' : '#065f46'
-                        }}>
-                          {guest.status === 'pending' ? 'Belum Buka' :
-                           guest.status === 'opened' ? 'Sudah Buka' : 'Sudah RSVP'}
-                        </span>
-                      </td>
-                      <td style={tdStyle}>
-                        <button
-                          onClick={() => {
-                            const link = `${window.location.origin}/undangan/${invitation.slug}?guest=${guest.personalized_code}`
-                            navigator.clipboard.writeText(link)
-                            alert('Link copied!')
-                          }}
-                          style={{
-                            padding: '0.4rem 0.8rem',
-                            background: '#f3f4f6',
-                            border: '1px solid #d1d5db',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '0.8rem'
-                          }}
-                        >
-                          📋 Copy
-                        </button>
-                      </td>
-                      <td style={tdStyle}>
-                        <button
-                          onClick={() => handleWhatsAppSingle(guest)}
-                          disabled={!guest.phone}
-                          style={{
-                            padding: '0.4rem 0.8rem',
-                            background: guest.phone ? '#25D366' : '#ccc',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: guest.phone ? 'pointer' : 'not-allowed',
-                            fontSize: '0.8rem'
-                          }}
-                        >
-                          💬 WA
-                        </button>
-                      </td>
+
+            {filteredGuests.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-16">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                  <Users className="w-8 h-8 text-gray-400" />
+                </div>
+                <p className="text-gray-500 text-lg">Belum ada tamu</p>
+                <p className="text-gray-400 text-sm">Import CSV untuk menambahkan daftar tamu</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">No</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Nama</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">No HP</th>
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase">Jumlah</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {filteredGuests.map((guest, index) => (
+                      <tr key={guest.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 text-sm text-gray-900">{index + 1}</td>
+                        <td className="px-6 py-4 font-semibold text-gray-900">{guest.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{guest.phone || '-'}</td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full font-semibold text-gray-900 text-sm">
+                            {guest.guest_count}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex px-3 py-1.5 rounded-full text-xs font-semibold ${
+                            guest.status === 'pending' ? 'bg-gray-100 text-gray-700' :
+                            guest.status === 'opened' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+                          }`}>
+                            {guest.status === 'pending' ? 'Belum Buka' :
+                             guest.status === 'opened' ? 'Sudah Buka' : 'Sudah RSVP'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => {
+                              const link = `${window.location.origin}/undangan/${invitation.slug}?guest=${guest.personalized_code}`
+                              navigator.clipboard.writeText(link)
+                              alert('Link copied!')
+                            }} className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Copy Link">
+                              <Copy className="w-4 h-4 text-gray-600" />
+                            </button>
+                            <button onClick={() => handleWhatsAppSingle(guest)} disabled={!guest.phone} className="p-2 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Send WhatsApp">
+                              <Send className="w-4 h-4 text-green-600" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
   )
-}
-
-const thStyle = {
-  padding: '1rem',
-  textAlign: 'left' as const,
-  fontSize: '0.85rem',
-  fontWeight: 600,
-  color: '#1C150A'
-}
-
-const tdStyle = {
-  padding: '1rem',
-  fontSize: '0.9rem',
-  color: '#333'
 }

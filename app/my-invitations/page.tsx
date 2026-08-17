@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Heart, Plus, LogOut, Eye, BarChart3, Copy, Share2, Edit, Files, Trash2, Calendar, Users, MessageSquare, ExternalLink } from 'lucide-react'
 
 export default function MyInvitations() {
   const router = useRouter()
@@ -130,370 +131,225 @@ export default function MyInvitations() {
 
   if (loading) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#FAF6EE',
-        color: '#C9A557'
-      }}>
-        Loading...
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-[#D4AF37] via-[#E5C158] to-[#C19B2E] rounded-2xl flex items-center justify-center animate-pulse mx-auto mb-4">
+            <Heart className="w-8 h-8 text-white fill-white" />
+          </div>
+          <p className="text-[#D4AF37] font-semibold">Loading...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#FAF6EE',
-      padding: '3rem 2rem'
-    }}>
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto'
-      }}>
-        {/* Header */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '3rem',
-          flexWrap: 'wrap',
-          gap: '1rem'
-        }}>
-          <div>
-            <h1 style={{
-              fontSize: '2.5rem',
-              fontWeight: 700,
-              color: '#1C150A',
-              marginBottom: '0.5rem'
-            }}>
-              Undangan Saya
-            </h1>
-            <p style={{
-              color: '#666',
-              fontSize: '1rem'
-            }}>
-              Kelola undangan pernikahan Anda
-            </p>
-          </div>
-          
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <Link
-              href="/create-invitation"
-              style={{
-                padding: '0.8rem 1.5rem',
-                background: '#C9A557',
-                border: 'none',
-                color: '#fff',
-                textDecoration: 'none',
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                display: 'inline-block'
-              }}
-            >
-              + Buat Undangan Baru
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* TOP NAVBAR */}
+      <nav className="sticky top-0 bg-white/80 backdrop-blur-xl border-b border-white/20 shadow-lg shadow-black/5 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#D4AF37] via-[#E5C158] to-[#C19B2E] rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg shadow-[#D4AF37]/30">
+                <Heart className="w-5 h-5 text-white fill-white" />
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">kaundang.id</span>
             </Link>
-            
-            <button
-              onClick={handleLogout}
-              style={{
-                padding: '0.8rem 1.5rem',
-                background: 'transparent',
-                border: '1px solid #ccc',
-                color: '#666',
-                fontSize: '0.9rem',
-                fontWeight: 500,
-                cursor: 'pointer'
-              }}
-            >
-              Logout
-            </button>
+
+            <div className="flex items-center gap-3">
+              <Link
+                href="/create-invitation"
+                className="group relative inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#D4AF37] via-[#E5C158] to-[#C19B2E] text-white font-semibold rounded-full shadow-lg shadow-[#D4AF37]/40 hover:shadow-xl hover:shadow-[#D4AF37]/50 transition-all hover:scale-105 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                <Plus className="w-5 h-5 relative z-10" />
+                <span className="relative z-10 hidden sm:inline">Buat Undangan Baru</span>
+                <span className="relative z-10 sm:hidden">Buat</span>
+              </Link>
+
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-2 px-4 sm:px-6 py-3 bg-white border-2 border-gray-200 hover:border-red-500 text-gray-700 hover:text-red-600 font-medium rounded-full transition-all hover:scale-105"
+              >
+                <LogOut className="w-5 h-5" />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+            </div>
           </div>
         </div>
+      </nav>
 
-        {/* Invitations Grid */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-2 tracking-tight">
+            Undangan Saya
+          </h1>
+          <p className="text-lg text-gray-600">
+            Kelola undangan pernikahan Anda
+          </p>
+        </div>
+
+        {/* Empty State */}
         {invitations.length === 0 ? (
-          <div style={{
-            textAlign: 'center',
-            padding: '5rem 2rem',
-            background: '#fff',
-            border: '1px solid rgba(201,165,87,0.2)'
-          }}>
-            <div style={{
-              fontSize: '3rem',
-              marginBottom: '1rem',
-              opacity: 0.3
-            }}>
-              💍
+          <div className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-r from-[#D4AF37] via-[#E5C158] to-[#C19B2E] rounded-3xl opacity-20 blur-lg"></div>
+            <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl border border-white/40 shadow-xl p-12 text-center">
+              <div className="w-24 h-24 bg-gradient-to-br from-[#D4AF37]/10 to-[#C19B2E]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Heart className="w-12 h-12 text-[#D4AF37]" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                Belum Ada Undangan
+              </h2>
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                Buat undangan pernikahan digital pertama Anda dengan template elegan yang tersedia
+              </p>
+              <Link
+                href="/create-invitation"
+                className="group relative inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-[#D4AF37] via-[#E5C158] to-[#C19B2E] text-white font-semibold text-lg rounded-full shadow-xl shadow-[#D4AF37]/40 hover:shadow-2xl hover:shadow-[#D4AF37]/50 transition-all hover:scale-105 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                <Plus className="w-5 h-5 relative z-10" />
+                <span className="relative z-10">Buat Undangan Sekarang</span>
+              </Link>
             </div>
-            <h2 style={{
-              fontSize: '1.5rem',
-              color: '#1C150A',
-              marginBottom: '0.5rem'
-            }}>
-              Belum Ada Undangan
-            </h2>
-            <p style={{
-              color: '#666',
-              marginBottom: '2rem'
-            }}>
-              Buat undangan pernikahan digital pertama Anda
-            </p>
-            <Link
-              href="/create-invitation"
-              style={{
-                padding: '1rem 2rem',
-                background: '#C9A557',
-                color: '#fff',
-                textDecoration: 'none',
-                fontSize: '0.95rem',
-                fontWeight: 600,
-                display: 'inline-block'
-              }}
-            >
-              Buat Undangan Sekarang
-            </Link>
           </div>
         ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-            gap: '2rem'
-          }}>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {invitations.map((inv) => (
               <div
                 key={inv.id}
-                style={{
-                  background: '#fff',
-                  border: '1px solid rgba(201,165,87,0.2)',
-                  overflow: 'hidden',
-                  transition: 'transform 0.3s, box-shadow 0.3s'
-                }}
+                className="group relative"
               >
-                {/* Header */}
-                <div style={{
-                  background: 'linear-gradient(135deg, #1C150A, #2D200E)',
-                  padding: '2rem',
-                  textAlign: 'center'
-                }}>
-                  <div style={{
-                    fontFamily: "'Great Vibes', cursive",
-                    fontSize: '2.5rem',
-                    color: '#C9A557',
-                    lineHeight: 1.2
-                  }}>
-                    {inv.bride_name} & {inv.groom_name}
-                  </div>
-                  <div style={{
-                    fontSize: '0.85rem',
-                    color: 'rgba(250,246,238,0.6)',
-                    marginTop: '0.5rem'
-                  }}>
-                    {inv.resepsi_date}
-                  </div>
-                </div>
-
-                {/* Stats */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr 1fr',
-                  borderBottom: '1px solid rgba(201,165,87,0.2)'
-                }}>
-                  <div style={{
-                    padding: '1rem',
-                    textAlign: 'center',
-                    borderRight: '1px solid rgba(201,165,87,0.2)'
-                  }}>
-                    <div style={{
-                      fontSize: '1.8rem',
-                      fontWeight: 700,
-                      color: '#C9A557'
-                    }}>
-                      {inv.hadir_count}
-                    </div>
-                    <div style={{
-                      fontSize: '0.7rem',
-                      color: '#666',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em'
-                    }}>
-                      Hadir
+                {/* Gradient Glow Effect */}
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-[#D4AF37] via-[#E5C158] to-[#A8C5A9] rounded-2xl opacity-0 group-hover:opacity-100 blur transition-all duration-500"></div>
+                
+                <div className="relative bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-transparent shadow-lg hover:shadow-2xl transition-all duration-300">
+                  {/* Header Card */}
+                  <div className="relative bg-gradient-to-br from-[#D4AF37] via-[#E5C158] to-[#C19B2E] p-8 text-center overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                    <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+                    
+                    <div className="relative z-10">
+                      <h3 className="text-3xl font-bold text-white mb-2 font-serif drop-shadow-lg">
+                        {inv.bride_name} & {inv.groom_name}
+                      </h3>
+                      <div className="flex items-center justify-center gap-2 text-white/90 text-sm">
+                        <Calendar className="w-4 h-4" />
+                        <span>{inv.resepsi_date}</span>
+                      </div>
                     </div>
                   </div>
 
-                  <div style={{
-                    padding: '1rem',
-                    textAlign: 'center',
-                    borderRight: '1px solid rgba(201,165,87,0.2)'
-                  }}>
-                    <div style={{
-                      fontSize: '1.8rem',
-                      fontWeight: 700,
-                      color: '#C9A557'
-                    }}>
-                      {inv.rsvp_count}
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-3 border-b border-gray-100">
+                    <div className="p-4 text-center border-r border-gray-100">
+                      <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-green-600">
+                        {inv.hadir_count}
+                      </div>
+                      <div className="text-xs text-gray-500 uppercase tracking-wider mt-1">
+                        Hadir
+                      </div>
                     </div>
-                    <div style={{
-                      fontSize: '0.7rem',
-                      color: '#666',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em'
-                    }}>
-                      Total RSVP
-                    </div>
-                  </div>
 
-                  <div style={{
-                    padding: '1rem',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{
-                      fontSize: '1.8rem',
-                      fontWeight: 700,
-                      color: '#C9A557'
-                    }}>
-                      {inv.wish_count}
+                    <div className="p-4 text-center border-r border-gray-100">
+                      <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] to-[#C19B2E]">
+                        {inv.rsvp_count}
+                      </div>
+                      <div className="text-xs text-gray-500 uppercase tracking-wider mt-1">
+                        Total RSVP
+                      </div>
                     </div>
-                    <div style={{
-                      fontSize: '0.7rem',
-                      color: '#666',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em'
-                    }}>
-                      Ucapan
+
+                    <div className="p-4 text-center">
+                      <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-purple-600">
+                        {inv.wish_count}
+                      </div>
+                      <div className="text-xs text-gray-500 uppercase tracking-wider mt-1">
+                        Ucapan
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Actions */}
-                <div style={{
-                  padding: '1.5rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.75rem'
-                }}>
-                  <Link
-                    href={`/undangan/${inv.slug}`}
-                    target="_blank"
-                    style={{
-                      padding: '0.8rem',
-                      background: '#C9A557',
-                      color: '#fff',
-                      textAlign: 'center',
-                      textDecoration: 'none',
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      letterSpacing: '0.05em'
-                    }}
-                  >
-                    Lihat Undangan →
-                  </Link>
-
-                  <Link
-                    href={`/my-invitations/${inv.id}`}
-                    style={{
-                      padding: '0.8rem',
-                      background: 'transparent',
-                      border: '1px solid rgba(201,165,87,0.3)',
-                      color: '#C9A557',
-                      textAlign: 'center',
-                      textDecoration: 'none',
-                      fontSize: '0.85rem',
-                      fontWeight: 500
-                    }}
-                  >
-                    Dashboard & Statistik
-                  </Link>
-
-                  <button
-                    onClick={() => {
-                      const link = `${window.location.origin}/undangan/${inv.slug}`
-                      navigator.clipboard.writeText(link)
-                      alert('Link berhasil disalin! 📋')
-                    }}
-                    style={{
-                      padding: '0.8rem',
-                      background: 'transparent',
-                      border: '1px solid rgba(201,165,87,0.3)',
-                      color: '#666',
-                      textAlign: 'center',
-                      fontSize: '0.85rem',
-                      fontWeight: 500,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    📋 Salin Link
-                  </button>
-
-                  <a 
-                    href={`https://wa.me/?text=Hai! Kami mengundang kamu ke pernikahan kami. Lihat undangannya di: ${window.location.origin}/undangan/${inv.slug}`}
-                    target="_blank"
-                    style={{
-                      padding: '0.8rem',
-                      background: '#25D366',
-                      color: '#fff',
-                      textAlign: 'center',
-                      textDecoration: 'none',
-                      fontSize: '0.85rem',
-                      fontWeight: 500
-                    }}
-                  >
-                    💬 Share via WhatsApp
-                  </a>
-
-                  {/* Edit, Duplicate, Delete Grid */}
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr 1fr',
-                    gap: '0.5rem',
-                    marginTop: '0.5rem'
-                  }}>
+                  {/* Actions */}
+                  <div className="p-6 space-y-3">
+                    {/* Primary Action */}
                     <Link
-                      href={`/my-invitations/${inv.id}/edit`}
-                      style={{
-                        padding: '0.6rem',
-                        background: 'transparent',
-                        border: '1px solid #3B82F6',
-                        color: '#3B82F6',
-                        textAlign: 'center',
-                        textDecoration: 'none',
-                        fontSize: '0.8rem'
-                      }}
+                      href={`/undangan/${inv.slug}`}
+                      target="_blank"
+                      className="group/btn relative block w-full px-4 py-3 bg-gradient-to-r from-[#D4AF37] via-[#E5C158] to-[#C19B2E] text-white font-semibold text-center rounded-xl shadow-md hover:shadow-lg transition-all overflow-hidden"
                     >
-                      ✏️ Edit
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700"></div>
+                      <div className="relative z-10 flex items-center justify-center gap-2">
+                        <Eye className="w-4 h-4" />
+                        <span>Lihat Undangan</span>
+                        <ExternalLink className="w-4 h-4" />
+                      </div>
                     </Link>
 
-                    <button
-                      onClick={() => handleDuplicate(inv)}
-                      style={{
-                        padding: '0.6rem',
-                        background: 'transparent',
-                        border: '1px solid #10B981',
-                        color: '#10B981',
-                        textAlign: 'center',
-                        fontSize: '0.8rem',
-                        cursor: 'pointer'
-                      }}
+                    {/* Dashboard Link */}
+                    <Link
+                      href={`/my-invitations/${inv.id}`}
+                      className="block w-full px-4 py-3 bg-white border-2 border-gray-200 hover:border-[#D4AF37] text-gray-700 hover:text-[#D4AF37] font-medium text-center rounded-xl transition-all"
                     >
-                      📋 Duplikat
-                    </button>
-                    
+                      <div className="flex items-center justify-center gap-2">
+                        <BarChart3 className="w-4 h-4" />
+                        <span>Dashboard & Statistik</span>
+                      </div>
+                    </Link>
+
+                    {/* Copy Link */}
                     <button
-                      onClick={() => handleDelete(inv.id)}
-                      style={{
-                        padding: '0.6rem',
-                        background: 'transparent',
-                        border: '1px solid #EF4444',
-                        color: '#EF4444',
-                        textAlign: 'center',
-                        fontSize: '0.8rem',
-                        cursor: 'pointer'
+                      onClick={() => {
+                        const link = `${window.location.origin}/undangan/${inv.slug}`
+                        navigator.clipboard.writeText(link)
+                        alert('Link berhasil disalin! 📋')
                       }}
+                      className="w-full px-4 py-3 bg-white border-2 border-gray-200 hover:border-blue-500 text-gray-700 hover:text-blue-600 font-medium text-center rounded-xl transition-all"
                     >
-                      🗑️ Hapus
+                      <div className="flex items-center justify-center gap-2">
+                        <Copy className="w-4 h-4" />
+                        <span>Salin Link</span>
+                      </div>
                     </button>
+
+                    {/* WhatsApp Share */}
+                    <a 
+                      href={`https://wa.me/?text=Hai! Kami mengundang kamu ke pernikahan kami. Lihat undangannya di: ${window.location.origin}/undangan/${inv.slug}`}
+                      target="_blank"
+                      className="block w-full px-4 py-3 bg-[#25D366] hover:bg-[#20BA5A] text-white font-medium text-center rounded-xl transition-all shadow-md hover:shadow-lg"
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <Share2 className="w-4 h-4" />
+                        <span>Share via WhatsApp</span>
+                      </div>
+                    </a>
+
+                    {/* Edit, Duplicate, Delete Grid */}
+                    <div className="grid grid-cols-3 gap-2 pt-2">
+                      <Link
+                        href={`/my-invitations/${inv.id}/edit`}
+                        className="px-3 py-2.5 bg-white border-2 border-blue-500 hover:bg-blue-500 text-blue-600 hover:text-white font-medium text-center rounded-lg transition-all text-sm"
+                      >
+                        <Edit className="w-4 h-4 mx-auto mb-1" />
+                        <span className="text-xs">Edit</span>
+                      </Link>
+
+                      <button
+                        onClick={() => handleDuplicate(inv)}
+                        className="px-3 py-2.5 bg-white border-2 border-green-500 hover:bg-green-500 text-green-600 hover:text-white font-medium text-center rounded-lg transition-all text-sm"
+                      >
+                        <Files className="w-4 h-4 mx-auto mb-1" />
+                        <span className="text-xs">Duplikat</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => handleDelete(inv.id)}
+                        className="px-3 py-2.5 bg-white border-2 border-red-500 hover:bg-red-500 text-red-600 hover:text-white font-medium text-center rounded-lg transition-all text-sm"
+                      >
+                        <Trash2 className="w-4 h-4 mx-auto mb-1" />
+                        <span className="text-xs">Hapus</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

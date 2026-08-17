@@ -1,4 +1,5 @@
 'use client'
+import { Music, MapPin, Calendar, Clock } from 'lucide-react'
 
 interface TemplateProps {
   invitation: any
@@ -6,11 +7,11 @@ interface TemplateProps {
   wishes: any[]
   countdown: { days: number; hours: number; mins: number; secs: number }
   selectedAttend: string
-  setSelectedAttend: (val: string) => void
+  setSelectedAttend: (value: string) => void
   wishName: string
-  setWishName: (val: string) => void
+  setWishName: (value: string) => void
   wishMessage: string
-  setWishMessage: (val: string) => void
+  setWishMessage: (value: string) => void
   handleRSVPSubmit: (e: React.FormEvent) => void
   handleWishSubmit: (e: React.FormEvent) => void
   isPlaying: boolean
@@ -34,550 +35,708 @@ export default function ModernMinimalTemplate({
   toggleMusic
 }: TemplateProps) {
   return (
-    <>
-      <style jsx global>{`
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.1); }
-        }
-      `}</style>
-      
-      <main style={{ background: '#ffffff' }}>
-        {/* COVER */}
-        <section style={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#1a1a1a',
-          textAlign: 'center',
-          padding: '4rem 2rem',
-          position: 'relative'
-        }}>
-          <div style={{
-            fontSize: '0.65rem',
-            letterSpacing: '0.4em',
+    <div style={{
+      minHeight: '100vh',
+      background: '#ECF0F1',
+      fontFamily: "'Inter', sans-serif",
+      color: '#2C3E50'
+    }}>
+      {/* Music Button */}
+      {invitation.music_url && (
+        <button
+          onClick={toggleMusic}
+          style={{
+            position: 'fixed',
+            bottom: '2rem',
+            right: '2rem',
+            width: '60px',
+            height: '60px',
+            borderRadius: '50%',
+            background: '#3498DB',
+            border: 'none',
+            boxShadow: '0 4px 20px rgba(52,152,219,0.4)',
+            cursor: 'pointer',
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#FFFFFF'
+          }}
+        >
+          <Music className={`w-6 h-6 ${isPlaying ? 'animate-pulse' : ''}`} />
+        </button>
+      )}
+
+      {/* Hero Section */}
+      <section style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem',
+        background: 'linear-gradient(135deg, #2C3E50 0%, #34495E 100%)',
+        position: 'relative'
+      }}>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(45deg, transparent 30%, rgba(52,152,219,0.1) 50%, transparent 70%)'
+        }}></div>
+
+        <div style={{ textAlign: 'center', position: 'relative', zIndex: 1, color: '#FFFFFF' }}>
+          <p style={{
+            fontSize: '0.875rem',
+            letterSpacing: '0.3em',
             textTransform: 'uppercase',
-            color: '#999',
-            marginBottom: '3rem',
-            fontWeight: 300
+            marginBottom: '2rem',
+            opacity: 0.8
           }}>
-            The Wedding of
-          </div>
-          
-          <div style={{
-            fontSize: 'clamp(3.5rem, 10vw, 6rem)',
-            lineHeight: 1.1,
-            color: '#fff',
+            Wedding Invitation
+          </p>
+
+          <h1 style={{
+            fontSize: 'clamp(2.5rem, 8vw, 5rem)',
+            fontWeight: 300,
             marginBottom: '1rem',
-            fontWeight: 200,
             letterSpacing: '-0.02em'
           }}>
             {invitation.bride_name}
-          </div>
-          
-          <div style={{
-            width: '60px',
-            height: '1px',
-            background: '#fff',
-            margin: '1.5rem 0'
-          }}></div>
-          
-          <div style={{
-            fontSize: 'clamp(3.5rem, 10vw, 6rem)',
-            lineHeight: 1.1,
-            color: '#fff',
-            fontWeight: 200,
-            letterSpacing: '-0.02em'
-          }}>
+            <br />
+            <span style={{ fontSize: '0.6em', opacity: 0.6 }}>&</span>
+            <br />
             {invitation.groom_name}
-          </div>
-          
-          <div style={{
-            fontSize: '0.9rem',
-            color: '#999',
-            marginTop: '3rem',
-            fontWeight: 300,
-            letterSpacing: '0.05em'
-          }}>
-            {invitation.resepsi_date}
-          </div>
-        </section>
+          </h1>
 
-        {/* COUNTDOWN */}
-        <section style={{
-          background: '#f5f5f5',
-          padding: '5rem 2rem',
-          textAlign: 'center'
-        }}>
-          <h2 style={{
-            fontSize: '0.7rem',
-            letterSpacing: '0.3em',
-            textTransform: 'uppercase',
-            color: '#1a1a1a',
-            marginBottom: '3rem',
-            fontWeight: 500
-          }}>
-            Countdown
-          </h2>
-          
           <div style={{
+            width: '80px',
+            height: '2px',
+            background: '#3498DB',
+            margin: '2rem auto'
+          }}></div>
+
+          <p style={{
+            fontSize: '1.125rem',
+            opacity: 0.9,
             display: 'flex',
-            gap: '2rem',
+            alignItems: 'center',
             justifyContent: 'center',
-            flexWrap: 'wrap'
+            gap: '0.5rem'
           }}>
-            {[
-              { val: countdown.days, label: 'Days' },
-              { val: countdown.hours, label: 'Hours' },
-              { val: countdown.mins, label: 'Minutes' },
-              { val: countdown.secs, label: 'Seconds' }
-            ].map((item, idx) => (
-              <div key={idx}>
-                <div style={{
-                  fontSize: '3.5rem',
-                  color: '#1a1a1a',
-                  fontWeight: 200,
-                  lineHeight: 1
-                }}>
-                  {String(item.val).padStart(2, '0')}
+            <Calendar className="w-5 h-5" />
+            {invitation.resepsi_date}
+          </p>
+        </div>
+      </section>
+
+      {/* Couple Details */}
+      <section style={{
+        padding: '5rem 2rem',
+        background: '#FFFFFF'
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '4rem'
+          }}>
+            {/* Bride */}
+            <div style={{ textAlign: 'center' }}>
+              <div style={{
+                width: '120px',
+                height: '120px',
+                margin: '0 auto 2rem',
+                background: 'linear-gradient(135deg, #3498DB, #2980B9)',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '3rem',
+                color: '#FFFFFF'
+              }}>
+                👰
+              </div>
+              <h3 style={{
+                fontSize: '2rem',
+                fontWeight: 300,
+                marginBottom: '0.5rem',
+                color: '#2C3E50'
+              }}>
+                {invitation.bride_name}
+              </h3>
+              <p style={{
+                fontSize: '1rem',
+                color: '#7F8C8D',
+                marginBottom: '1rem'
+              }}>
+                {invitation.bride_fullname}
+              </p>
+              <div style={{
+                fontSize: '0.9rem',
+                color: '#95A5A6',
+                lineHeight: 1.6
+              }}>
+                Daughter of
+                <br />
+                <strong style={{ color: '#2C3E50' }}>{invitation.bride_parents}</strong>
+              </div>
+            </div>
+
+            {/* Groom */}
+            <div style={{ textAlign: 'center' }}>
+              <div style={{
+                width: '120px',
+                height: '120px',
+                margin: '0 auto 2rem',
+                background: 'linear-gradient(135deg, #3498DB, #2980B9)',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '3rem',
+                color: '#FFFFFF'
+              }}>
+                🤵
+              </div>
+              <h3 style={{
+                fontSize: '2rem',
+                fontWeight: 300,
+                marginBottom: '0.5rem',
+                color: '#2C3E50'
+              }}>
+                {invitation.groom_name}
+              </h3>
+              <p style={{
+                fontSize: '1rem',
+                color: '#7F8C8D',
+                marginBottom: '1rem'
+              }}>
+                {invitation.groom_fullname}
+              </p>
+              <div style={{
+                fontSize: '0.9rem',
+                color: '#95A5A6',
+                lineHeight: 1.6
+              }}>
+                Son of
+                <br />
+                <strong style={{ color: '#2C3E50' }}>{invitation.groom_parents}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Countdown */}
+      <section style={{
+        padding: '4rem 2rem',
+        background: '#2C3E50',
+        color: '#FFFFFF',
+        textAlign: 'center'
+      }}>
+        <h2 style={{
+          fontSize: '2rem',
+          fontWeight: 300,
+          marginBottom: '3rem',
+          letterSpacing: '0.05em'
+        }}>
+          TIME UNTIL WE SAY "I DO"
+        </h2>
+        
+        <div style={{
+          display: 'flex',
+          gap: '2rem',
+          justifyContent: 'center',
+          flexWrap: 'wrap'
+        }}>
+          {[
+            { label: 'Days', value: countdown.days },
+            { label: 'Hours', value: countdown.hours },
+            { label: 'Minutes', value: countdown.mins },
+            { label: 'Seconds', value: countdown.secs }
+          ].map((item, index) => (
+            <div key={index} style={{
+              background: 'rgba(255,255,255,0.1)',
+              borderRadius: '4px',
+              padding: '2rem 1.5rem',
+              minWidth: '120px',
+              backdropFilter: 'blur(10px)'
+            }}>
+              <div style={{
+                fontSize: '3rem',
+                fontWeight: 700,
+                marginBottom: '0.5rem',
+                fontFamily: 'monospace'
+              }}>
+                {String(item.value).padStart(2, '0')}
+              </div>
+              <div style={{
+                fontSize: '0.875rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.2em',
+                opacity: 0.8
+              }}>
+                {item.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Event Details */}
+      <section style={{
+        padding: '5rem 2rem',
+        background: '#FFFFFF'
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <h2 style={{
+            fontSize: '2rem',
+            fontWeight: 300,
+            textAlign: 'center',
+            marginBottom: '4rem',
+            letterSpacing: '0.05em',
+            color: '#2C3E50'
+          }}>
+            EVENT DETAILS
+          </h2>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+            gap: '3rem'
+          }}>
+            {/* Akad */}
+            <div style={{
+              padding: '2.5rem',
+              background: '#ECF0F1',
+              borderLeft: '4px solid #3498DB'
+            }}>
+              <h3 style={{
+                fontSize: '1.5rem',
+                fontWeight: 400,
+                marginBottom: '2rem',
+                color: '#2C3E50'
+              }}>
+                Wedding Ceremony
+              </h3>
+              <div style={{ color: '#7F8C8D', lineHeight: 2 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                  <Calendar className="w-5 h-5" style={{ color: '#3498DB' }} />
+                  <span>{invitation.akad_date}</span>
                 </div>
-                <div style={{ 
-                  fontSize: '0.65rem', 
-                  letterSpacing: '0.2em', 
-                  textTransform: 'uppercase', 
-                  color: '#999',
-                  marginTop: '0.5rem',
-                  fontWeight: 300
-                }}>
-                  {item.label}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                  <Clock className="w-5 h-5" style={{ color: '#3498DB' }} />
+                  <span>{invitation.akad_time}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'start', gap: '1rem' }}>
+                  <MapPin className="w-5 h-5" style={{ color: '#3498DB', marginTop: '0.25rem' }} />
+                  <div>
+                    <strong style={{ color: '#2C3E50' }}>{invitation.akad_venue}</strong>
+                    <br />
+                    <span style={{ fontSize: '0.9rem' }}>{invitation.akad_address}</span>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
+            </div>
 
-        {/* PHOTO GALLERY */}
-        {invitation.photos && invitation.photos.length > 0 && (
-          <section style={{
-            background: '#fff',
-            padding: '6rem 2rem'
-          }}>
-            <h2 style={{
-              fontSize: '0.7rem',
-              letterSpacing: '0.3em',
-              textTransform: 'uppercase',
-              color: '#1a1a1a',
-              marginBottom: '3rem',
-              fontWeight: 500,
-              textAlign: 'center'
+            {/* Resepsi */}
+            <div style={{
+              padding: '2.5rem',
+              background: '#ECF0F1',
+              borderLeft: '4px solid #3498DB'
             }}>
-              Gallery
+              <h3 style={{
+                fontSize: '1.5rem',
+                fontWeight: 400,
+                marginBottom: '2rem',
+                color: '#2C3E50'
+              }}>
+                Reception
+              </h3>
+              <div style={{ color: '#7F8C8D', lineHeight: 2 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                  <Calendar className="w-5 h-5" style={{ color: '#3498DB' }} />
+                  <span>{invitation.resepsi_date}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                  <Clock className="w-5 h-5" style={{ color: '#3498DB' }} />
+                  <span>{invitation.resepsi_time}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'start', gap: '1rem' }}>
+                  <MapPin className="w-5 h-5" style={{ color: '#3498DB', marginTop: '0.25rem' }} />
+                  <div>
+                    <strong style={{ color: '#2C3E50' }}>{invitation.resepsi_venue}</strong>
+                    <br />
+                    <span style={{ fontSize: '0.9rem' }}>{invitation.resepsi_address}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Photo Gallery */}
+      {invitation.photos && invitation.photos.length > 0 && (
+        <section style={{
+          padding: '5rem 2rem',
+          background: '#F8F9FA'
+        }}>
+          <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+            <h2 style={{
+              fontSize: '2rem',
+              fontWeight: 300,
+              textAlign: 'center',
+              marginBottom: '4rem',
+              letterSpacing: '0.05em',
+              color: '#2C3E50'
+            }}>
+              GALLERY
             </h2>
 
             <div style={{
-              maxWidth: '1200px',
-              margin: '0 auto',
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: '1rem'
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: '1.5rem'
             }}>
               {invitation.photos.map((photo: string, index: number) => (
-                <div
-                  key={index}
-                  style={{
-                    position: 'relative',
-                    paddingBottom: '100%',
-                    overflow: 'hidden',
-                    background: '#f5f5f5'
-                  }}
-                >
+                <div key={index} style={{
+                  position: 'relative',
+                  paddingBottom: '100%',
+                  overflow: 'hidden',
+                  background: '#FFFFFF',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                }}>
                   <img
                     src={photo}
-                    alt={`Gallery ${index + 1}`}
+                    alt={`Photo ${index + 1}`}
                     style={{
                       position: 'absolute',
-                      top: 0,
-                      left: 0,
                       width: '100%',
                       height: '100%',
-                      objectFit: 'cover',
-                      transition: 'transform 0.5s',
-                      cursor: 'pointer'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'scale(1.1)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'scale(1)'
+                      objectFit: 'cover'
                     }}
                   />
                 </div>
               ))}
             </div>
-          </section>
-        )}
+          </div>
+        </section>
+      )}
 
-        {/* RSVP */}
-        <section style={{
-          background: '#1a1a1a',
-          padding: '6rem 2rem',
-          textAlign: 'center'
-        }}>
+      {/* RSVP */}
+      <section style={{
+        padding: '5rem 2rem',
+        background: '#FFFFFF'
+      }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
           <h2 style={{
-            fontSize: '0.7rem',
-            letterSpacing: '0.3em',
-            textTransform: 'uppercase',
-            color: '#fff',
-            marginBottom: '3rem',
-            fontWeight: 500
+            fontSize: '2rem',
+            fontWeight: 300,
+            textAlign: 'center',
+            marginBottom: '1rem',
+            letterSpacing: '0.05em',
+            color: '#2C3E50'
           }}>
             RSVP
           </h2>
-          
-          <form onSubmit={handleRSVPSubmit} style={{
-            maxWidth: '500px',
-            margin: '0 auto',
-            background: '#222',
-            padding: '2.5rem',
-            border: '1px solid #333'
+          <p style={{
+            textAlign: 'center',
+            color: '#7F8C8D',
+            marginBottom: '3rem'
           }}>
-            <div style={{ marginBottom: '1.5rem', textAlign: 'left' }}>
+            Please confirm your attendance
+          </p>
+
+          <form onSubmit={handleRSVPSubmit} style={{
+            background: '#F8F9FA',
+            padding: '2.5rem',
+            borderLeft: '4px solid #3498DB'
+          }}>
+            <div style={{ marginBottom: '1.5rem' }}>
               <label style={{
                 display: 'block',
-                fontSize: '0.7rem',
-                letterSpacing: '0.15em',
-                textTransform: 'uppercase',
-                color: '#999',
                 marginBottom: '0.5rem',
-                fontWeight: 300
+                color: '#2C3E50',
+                fontSize: '0.875rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em'
               }}>
-                Name
+                Full Name
               </label>
-              <input type="text" name="name" required style={{
-                width: '100%',
-                padding: '0.9rem',
-                border: '1px solid #333',
-                background: '#1a1a1a',
-                color: '#fff',
-                fontSize: '0.9rem',
-                outline: 'none'
-              }} />
+              <input
+                type="text"
+                name="name"
+                required
+                style={{
+                  width: '100%',
+                  padding: '0.875rem',
+                  border: '1px solid #BDC3C7',
+                  background: '#FFFFFF',
+                  fontSize: '1rem',
+                  outline: 'none'
+                }}
+              />
             </div>
-            
-            <div style={{ marginBottom: '1.5rem', textAlign: 'left' }}>
+
+            <div style={{ marginBottom: '1.5rem' }}>
               <label style={{
                 display: 'block',
-                fontSize: '0.7rem',
-                letterSpacing: '0.15em',
-                textTransform: 'uppercase',
-                color: '#999',
                 marginBottom: '0.5rem',
-                fontWeight: 300
+                color: '#2C3E50',
+                fontSize: '0.875rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em'
               }}>
-                Phone
+                Phone (Optional)
               </label>
-              <input type="tel" name="phone" style={{
-                width: '100%',
-                padding: '0.9rem',
-                border: '1px solid #333',
-                background: '#1a1a1a',
-                color: '#fff',
-                fontSize: '0.9rem',
-                outline: 'none'
-              }} />
+              <input
+                type="tel"
+                name="phone"
+                style={{
+                  width: '100%',
+                  padding: '0.875rem',
+                  border: '1px solid #BDC3C7',
+                  background: '#FFFFFF',
+                  fontSize: '1rem',
+                  outline: 'none'
+                }}
+              />
             </div>
-            
-            <div style={{ marginBottom: '1.5rem', textAlign: 'left' }}>
+
+            <div style={{ marginBottom: '1.5rem' }}>
               <label style={{
                 display: 'block',
-                fontSize: '0.7rem',
-                letterSpacing: '0.15em',
-                textTransform: 'uppercase',
-                color: '#999',
                 marginBottom: '0.5rem',
-                fontWeight: 300
+                color: '#2C3E50',
+                fontSize: '0.875rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em'
               }}>
                 Attendance
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
-                {['✓ Hadir', '✕ Tidak Hadir', '? Mungkin'].map((opt) => (
-                  <div
-                    key={opt}
-                    onClick={() => setSelectedAttend(opt)}
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                {['✓ Hadir', '✕ Tidak Hadir', '? Mungkin'].map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setSelectedAttend(option)}
                     style={{
-                      padding: '0.8rem',
-                      textAlign: 'center',
-                      border: selectedAttend === opt ? '1px solid #fff' : '1px solid #333',
-                      fontSize: '0.75rem',
+                      flex: 1,
+                      padding: '0.875rem',
+                      border: selectedAttend === option ? '2px solid #3498DB' : '1px solid #BDC3C7',
+                      background: selectedAttend === option ? '#3498DB' : '#FFFFFF',
+                      color: selectedAttend === option ? '#FFFFFF' : '#2C3E50',
                       cursor: 'pointer',
-                      background: selectedAttend === opt ? '#fff' : 'transparent',
-                      color: selectedAttend === opt ? '#1a1a1a' : '#999',
-                      transition: 'all 0.3s',
-                      fontWeight: 300
+                      fontSize: '0.875rem',
+                      transition: 'all 0.3s'
                     }}
                   >
-                    {opt}
-                  </div>
+                    {option}
+                  </button>
                 ))}
               </div>
             </div>
 
-            <div style={{ marginBottom: '1.5rem', textAlign: 'left' }}>
+            <div style={{ marginBottom: '2rem' }}>
               <label style={{
                 display: 'block',
-                fontSize: '0.7rem',
-                letterSpacing: '0.15em',
-                textTransform: 'uppercase',
-                color: '#999',
                 marginBottom: '0.5rem',
-                fontWeight: 300
+                color: '#2C3E50',
+                fontSize: '0.875rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em'
               }}>
-                Guests
+                Number of Guests
               </label>
-              <select name="guest_count" style={{
-                width: '100%',
-                padding: '0.9rem',
-                border: '1px solid #333',
-                background: '#1a1a1a',
-                color: '#fff',
-                fontSize: '0.9rem',
-                outline: 'none'
-              }}>
-                <option value="1">1 person</option>
-                <option value="2">2 people</option>
-                <option value="3">3 people</option>
-                <option value="4">4 people</option>
-              </select>
+              <input
+                type="number"
+                name="guest_count"
+                defaultValue={1}
+                min={1}
+                max={5}
+                required
+                style={{
+                  width: '100%',
+                  padding: '0.875rem',
+                  border: '1px solid #BDC3C7',
+                  background: '#FFFFFF',
+                  fontSize: '1rem',
+                  outline: 'none'
+                }}
+              />
             </div>
-            
-            <button type="submit" style={{
-              width: '100%',
-              padding: '1rem',
-              background: '#fff',
-              border: 'none',
-              color: '#1a1a1a',
-              fontSize: '0.7rem',
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-              fontWeight: 500
-            }}>
-              Submit
+
+            <button
+              type="submit"
+              style={{
+                width: '100%',
+                padding: '1rem',
+                background: '#3498DB',
+                color: '#FFFFFF',
+                border: 'none',
+                fontSize: '0.875rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                cursor: 'pointer',
+                transition: 'background 0.3s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#2980B9'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#3498DB'}
+            >
+              Submit Confirmation
             </button>
           </form>
-        </section>
+        </div>
+      </section>
 
-        {/* WISHES */}
-        <section style={{
-          background: '#f5f5f5',
-          padding: '6rem 2rem',
-          textAlign: 'center'
-        }}>
+      {/* Wishes */}
+      <section style={{
+        padding: '5rem 2rem',
+        background: '#F8F9FA'
+      }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           <h2 style={{
-            fontSize: '0.7rem',
-            letterSpacing: '0.3em',
-            textTransform: 'uppercase',
-            color: '#1a1a1a',
+            fontSize: '2rem',
+            fontWeight: 300,
+            textAlign: 'center',
             marginBottom: '3rem',
-            fontWeight: 500
+            letterSpacing: '0.05em',
+            color: '#2C3E50'
           }}>
-            Wishes
+            WISHES
           </h2>
-          
+
           <form onSubmit={handleWishSubmit} style={{
-            maxWidth: '600px',
-            margin: '0 auto 3rem',
-            background: '#fff',
-            padding: '2rem',
-            border: '1px solid #e0e0e0'
+            background: '#FFFFFF',
+            padding: '2.5rem',
+            marginBottom: '3rem',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
           }}>
-            <div style={{ marginBottom: '1rem', textAlign: 'left' }}>
+            <div style={{ marginBottom: '1.5rem' }}>
               <label style={{
                 display: 'block',
-                fontSize: '0.7rem',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                color: '#666',
                 marginBottom: '0.5rem',
-                fontWeight: 300
+                color: '#2C3E50',
+                fontSize: '0.875rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em'
               }}>
-                Name
+                Your Name
               </label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={wishName}
                 onChange={(e) => setWishName(e.target.value)}
                 required
                 style={{
                   width: '100%',
-                  padding: '0.8rem',
-                  border: '1px solid #e0e0e0',
-                  fontSize: '0.9rem',
+                  padding: '0.875rem',
+                  border: '1px solid #BDC3C7',
+                  background: '#FFFFFF',
+                  fontSize: '1rem',
                   outline: 'none'
-                }} 
+                }}
               />
             </div>
-            
-            <div style={{ marginBottom: '1.5rem', textAlign: 'left' }}>
+
+            <div style={{ marginBottom: '1.5rem' }}>
               <label style={{
                 display: 'block',
-                fontSize: '0.7rem',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                color: '#666',
                 marginBottom: '0.5rem',
-                fontWeight: 300
+                color: '#2C3E50',
+                fontSize: '0.875rem',
+                textTransform: '0.1em'
               }}>
                 Message
               </label>
-              <textarea 
+              <textarea
                 value={wishMessage}
                 onChange={(e) => setWishMessage(e.target.value)}
                 required
                 rows={4}
                 style={{
                   width: '100%',
-                  padding: '0.8rem',
-                  border: '1px solid #e0e0e0',
-                  fontSize: '0.9rem',
+                  padding: '0.875rem',
+                  border: '1px solid #BDC3C7',
+                  background: '#FFFFFF',
+                  fontSize: '1rem',
                   outline: 'none',
                   resize: 'vertical'
-                }} 
+                }}
               />
             </div>
-            
-            <button type="submit" style={{
-              width: '100%',
-              padding: '0.8rem',
-              background: '#1a1a1a',
-              border: 'none',
-              color: '#fff',
-              fontSize: '0.7rem',
-              letterSpacing: '0.15em',
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-              fontWeight: 500
-            }}>
-              Send
+
+            <button
+              type="submit"
+              style={{
+                width: '100%',
+                padding: '1rem',
+                background: '#3498DB',
+                color: '#FFFFFF',
+                border: 'none',
+                fontSize: '0.875rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                cursor: 'pointer'
+              }}
+            >
+              Send Message
             </button>
           </form>
-          
-          <div style={{
-            maxWidth: '600px',
-            margin: '0 auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1rem'
-          }}>
-            {wishes.length > 0 ? (
-              wishes.map((wish) => (
-                <div key={wish.id} style={{
-                  background: '#fff',
-                  border: '1px solid #e0e0e0',
-                  padding: '1.5rem',
-                  textAlign: 'left'
+
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
+            {wishes.map((wish) => (
+              <div key={wish.id} style={{
+                background: '#FFFFFF',
+                padding: '2rem',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginBottom: '1rem',
+                  paddingBottom: '1rem',
+                  borderBottom: '1px solid #ECF0F1'
                 }}>
-                  <div style={{
-                    fontWeight: 500,
-                    color: '#1a1a1a',
-                    fontSize: '0.85rem',
-                    marginBottom: '0.5rem'
-                  }}>
+                  <strong style={{ color: '#2C3E50', textTransform: 'uppercase', fontSize: '0.875rem', letterSpacing: '0.05em' }}>
                     {wish.name}
-                  </div>
-                  <div style={{
-                    fontSize: '0.9rem',
-                    color: '#666',
-                    lineHeight: 1.6
-                  }}>
-                    {wish.message}
-                  </div>
-                  <div style={{
-                    fontSize: '0.7rem',
-                    color: '#999',
-                    marginTop: '0.8rem'
-                  }}>
-                    {new Date(wish.created_at).toLocaleDateString('id-ID')}
-                  </div>
+                  </strong>
+                  <span style={{ fontSize: '0.75rem', color: '#95A5A6' }}>
+                    {new Date(wish.created_at).toLocaleDateString('en-US')}
+                  </span>
                 </div>
-              ))
-            ) : (
-              <div style={{ color: '#999', fontSize: '0.9rem' }}>
-                No messages yet
+                <p style={{
+                  color: '#7F8C8D',
+                  lineHeight: 1.8,
+                  fontSize: '0.95rem'
+                }}>
+                  {wish.message}
+                </p>
               </div>
-            )}
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* CLOSING */}
-        <section style={{
-          background: '#1a1a1a',
-          padding: '8rem 2rem',
-          textAlign: 'center'
+      {/* Footer */}
+      <footer style={{
+        padding: '3rem 2rem',
+        background: '#2C3E50',
+        textAlign: 'center',
+        color: '#FFFFFF'
+      }}>
+        <p style={{
+          fontSize: '1.5rem',
+          fontWeight: 300,
+          marginBottom: '0.5rem',
+          letterSpacing: '0.05em'
         }}>
-          <div style={{
-            fontSize: 'clamp(2.5rem, 6vw, 4rem)',
-            color: '#fff',
-            marginBottom: '2rem',
-            fontWeight: 200,
-            letterSpacing: '-0.02em'
-          }}>
-            Thank You
-          </div>
-          
-          <p style={{
-            fontSize: '0.9rem',
-            color: '#999',
-            maxWidth: '400px',
-            margin: '0 auto 2rem',
-            lineHeight: 1.8,
-            fontWeight: 300
-          }}>
-            We look forward to celebrating with you
-          </p>
-          
-          <div style={{
-            fontSize: '0.7rem',
-            letterSpacing: '0.2em',
-            textTransform: 'uppercase',
-            color: '#666',
-            fontWeight: 300
-          }}>
-            {invitation.bride_name} & {invitation.groom_name}
-          </div>
-        </section>
-
-        {/* Floating Music Button */}
-        {invitation.music_url && (
-          <div
-            onClick={toggleMusic}
-            style={{
-              position: 'fixed',
-              bottom: '2rem',
-              right: '2rem',
-              width: '60px',
-              height: '60px',
-              borderRadius: '50%',
-              background: '#1a1a1a',
-              border: '1px solid #333',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-              zIndex: 999,
-              transition: 'transform 0.3s',
-              animation: isPlaying ? 'pulse 2s infinite' : 'none'
-            }}
-          >
-            <span style={{ fontSize: '1.5rem' }}>
-              {isPlaying ? '🔊' : '🔇'}
-            </span>
-          </div>
-        )}
-      </main>
-    </>
+          {invitation.bride_name} & {invitation.groom_name}
+        </p>
+        <p style={{ fontSize: '0.875rem', opacity: 0.6, marginTop: '1rem' }}>
+          Powered by kaundang.id
+        </p>
+      </footer>
+    </div>
   )
 }

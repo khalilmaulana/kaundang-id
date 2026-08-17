@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import GoldCreamTemplate from '../../templates/GoldCreamTemplate'
 import ModernMinimalTemplate from '../../templates/ModernMinimalTemplate'
 import FloralRomanticTemplate from '../../templates/FloralRomanticTemplate'
+import ClassicElegantTemplate from '../../templates/ClassicElegantTemplate'
 
 export default function InvitationPage() {
   const params = useParams()
@@ -382,16 +383,18 @@ export default function InvitationPage() {
       toggleMusic
     }
 
-    switch (invitation.template) {
-      case 'modern-minimal':
-        return <ModernMinimalTemplate {...templateProps} />
-      case 'floral-romantic':
-        return <FloralRomanticTemplate {...templateProps} />
-      case 'gold-cream':
-      default:
-        return <GoldCreamTemplate {...templateProps} />
-    }
+     switch (invitation.template) {
+    case 'modern-minimal':
+      return <ModernMinimalTemplate {...templateProps} />
+    case 'floral-romantic':
+      return <FloralRomanticTemplate {...templateProps} />
+    case 'classic-elegant':  // ← ADD THIS
+      return <ClassicElegantTemplate {...templateProps} />
+    case 'gold-cream':
+    default:
+      return <GoldCreamTemplate {...templateProps} />
   }
+}
 
   return renderTemplate()
 }
