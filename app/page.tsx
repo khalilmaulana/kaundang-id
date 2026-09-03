@@ -506,7 +506,10 @@ export default function LandingPage() {
                     ))}
                   </ul>
 
-                  <Link href="/register" className={`group/btn relative block w-full px-6 py-3 font-semibold rounded-full text-center transition-all overflow-hidden ${plan.highlighted ? 'bg-gradient-to-r from-[#D4AF37] via-[#E5C158] to-[#C19B2E] text-white shadow-lg shadow-[#D4AF37]/40 hover:shadow-xl hover:shadow-[#D4AF37]/50' : 'bg-white text-gray-700 border-2 border-[#D4AF37] hover:bg-gradient-to-r hover:from-[#D4AF37] hover:to-[#C19B2E] hover:text-white hover:border-transparent'}`}>
+                  <Link
+                    href={`/payment?plan=${plan.name.toLowerCase()}`}
+                    className={`group/btn relative block w-full px-6 py-3 font-semibold rounded-full text-center transition-all overflow-hidden ${plan.highlighted ? 'bg-gradient-to-r from-[#D4AF37] via-[#E5C158] to-[#C19B2E] text-white shadow-lg shadow-[#D4AF37]/40 hover:shadow-xl hover:shadow-[#D4AF37]/50' : 'bg-white text-gray-700 border-2 border-[#D4AF37] hover:bg-gradient-to-r hover:from-[#D4AF37] hover:to-[#C19B2E] hover:text-white hover:border-transparent'}`}
+                  >
                     {plan.highlighted && (
                       <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700"></div>
                     )}

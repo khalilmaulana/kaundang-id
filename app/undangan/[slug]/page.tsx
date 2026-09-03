@@ -1,11 +1,14 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import { parseIndonesianDateTime } from '../../lib/eventHelpers'
 import { useParams } from 'next/navigation'
 import GoldCreamTemplate from '../../templates/GoldCreamTemplate'
 import ModernMinimalTemplate from '../../templates/ModernMinimalTemplate'
 import FloralRomanticTemplate from '../../templates/FloralRomanticTemplate'
 import ClassicElegantTemplate from '../../templates/ClassicElegantTemplate'
+import GrandCelebrationTemplate from '../../templates/GrandCelebrationTemplate'
+import GrandCelebrationEnvelope from '../../templates/GrandCelebrationEnvelope'
 
 export default function InvitationPage() {
   const params = useParams()
@@ -35,11 +38,12 @@ export default function InvitationPage() {
   useEffect(() => {
     if (invitation) {
       const timer = setInterval(() => {
-        const target = new Date(invitation.resepsi_date)
+        const parsed = parseIndonesianDateTime(invitation.resepsi_date, invitation.resepsi_time)
+        const target = parsed || new Date(invitation.resepsi_date)
         const now = new Date()
         const diff = target.getTime() - now.getTime()
         
-        if (diff <= 0) {
+        if (isNaN(diff) || diff <= 0) {
           setCountdown({ days: 0, hours: 0, mins: 0, secs: 0 })
           return
         }
@@ -89,7 +93,6 @@ export default function InvitationPage() {
     }
   }
 
-  // KEEP ONLY THIS fetchInvitation (with try-catch)
   const fetchInvitation = async () => {
     setLoading(true)
     
@@ -132,11 +135,6 @@ export default function InvitationPage() {
         setLoading(false)
         return
       }
-      
-      console.log('=== DEBUG INVITATION DATA ===')
-      console.log('Full invitation data:', invData)
-      console.log('Invitation ID:', invData?.id)
-      console.log('ID Type:', typeof invData?.id)
         
       if (invData) {
         setInvitation(invData)
@@ -181,9 +179,6 @@ export default function InvitationPage() {
       guest_count: Number(formData.get('guest_count') || 1)
     }
     
-    console.log('=== RSVP SUBMIT ===')
-    console.log('Data to insert:', rsvpData)
-    
     const { data, error } = await supabase
       .from('rsvp')
       .insert([rsvpData])
@@ -194,8 +189,6 @@ export default function InvitationPage() {
       alert('Error: ' + error.message)
       return
     }
-    
-    console.log('RSVP Success:', data)
     
     if (guestCode) {
       await supabase
@@ -228,9 +221,6 @@ export default function InvitationPage() {
       message: String(wishMessage).trim()
     }
     
-    console.log('=== WISH SUBMIT ===')
-    console.log('Data to insert:', wishData)
-    
     const { data, error } = await supabase
       .from('wishes')
       .insert([wishData])
@@ -241,8 +231,6 @@ export default function InvitationPage() {
       alert('Error: ' + error.message)
       return
     }
-    
-    console.log('Wish Success:', data)
     
     if (guestCode) {
       await supabase
@@ -291,7 +279,19 @@ export default function InvitationPage() {
     )
   }
 
+  // ENVELOPE SCREEN — per-template
   if (!envelopeOpen) {
+    if (invitation.template === 'grand-celebration') {
+      return (
+        <GrandCelebrationEnvelope
+          invitation={invitation}
+          guestName={guestName}
+          onOpen={() => setEnvelopeOpen(true)}
+        />
+      )
+    }
+
+    // Default envelope (dipakai Gold Cream, Modern Minimal, Floral Romantic, Classic Elegant)
     return (
       <div style={{
         position: 'fixed',
@@ -383,18 +383,46 @@ export default function InvitationPage() {
       toggleMusic
     }
 
-     switch (invitation.template) {
-    case 'modern-minimal':
-      return <ModernMinimalTemplate {...templateProps} />
-    case 'floral-romantic':
-      return <FloralRomanticTemplate {...templateProps} />
-    case 'classic-elegant':  // ← ADD THIS
-      return <ClassicElegantTemplate {...templateProps} />
-    case 'gold-cream':
-    default:
-      return <GoldCreamTemplate {...templateProps} />
+    switch (invitation.template) {
+      case 'modern-minimal':
+        return <ModernMinimalTemplate {...templateProps} />
+      case 'floral-romantic':
+        return <FloralRomanticTemplate {...templateProps} />
+      case 'classic-elegant':
+        return <ClassicElegantTemplate {...templateProps} />
+      case 'grand-celebration':
+        return (
+          <div style={{ position: 'relative', minHeight: '100vh', background: '#1a0505', overflowX: 'hidden' }}>
+            {/* Backdrop tajam (tanpa blur, tanpa scale) — cuma kelihatan di layar lebar, otomatis hilang di mobile */}
+            <div style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 0,
+              backgroundImage: invitation.photos?.[0] ? `url(${invitation.photos[0]})` : 'linear-gradient(135deg, #5C1A1A, #2A0A0A)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              filter: 'brightness(0.7)'
+            }}></div>
+            {/* Kolom konten tajam, lebar mobile, nempel di kanan */}
+            <div style={{
+              position: 'relative',
+              zIndex: 1,
+              maxWidth: '480px',
+              marginLeft: 'auto',
+              marginRight: 0,
+              minHeight: '100vh',
+              boxShadow: '0 0 100px rgba(0,0,0,0.7)',
+              overflowX: 'hidden'
+            }}>
+              <GrandCelebrationTemplate {...templateProps} />
+            </div>
+          </div>
+        )
+      case 'gold-cream':
+      default:
+        return <GoldCreamTemplate {...templateProps} />
+    }
   }
-}
 
   return renderTemplate()
 }

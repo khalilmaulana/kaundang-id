@@ -3,13 +3,16 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Heart, Plus, LogOut, Eye, BarChart3, Copy, Share2, Edit, Files, Trash2, Calendar, Users, MessageSquare, ExternalLink } from 'lucide-react'
+import { Heart, Plus, LogOut, Eye, BarChart3, Copy, Share2, Edit, Files, Trash2, Calendar, Users, MessageSquare, ExternalLink, Crown, AlertTriangle, History, X } from 'lucide-react'
+import { getUserPlanStatus, PLAN_LABELS, type UserPlanStatus } from '../lib/planLimits'
 
 export default function MyInvitations() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [invitations, setInvitations] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [planStatus, setPlanStatus] = useState<UserPlanStatus | null>(null)
+  const [latestRejected, setLatestRejected] = useState<any>(null)
 
   useEffect(() => {
     checkUser()
@@ -22,6 +25,24 @@ export default function MyInvitations() {
     } else {
       setUser(user)
       fetchInvitations(user.id)
+      const status = await getUserPlanStatus(supabase, user.id)
+      setPlanStatus(status)
+
+      // Cek kalau ada payment yang baru ditolak (belum di-dismiss)
+      const { data: rejectedPayments } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'rejected')
+        .order('verified_at', { ascending: false })
+        .limit(1)
+
+      if (rejectedPayments && rejectedPayments.length > 0) {
+        const dismissedId = localStorage.getItem('dismissed_rejected_payment')
+        if (dismissedId !== String(rejectedPayments[0].id)) {
+          setLatestRejected(rejectedPayments[0])
+        }
+      }
     }
   }
 
@@ -129,6 +150,13 @@ export default function MyInvitations() {
     }
   }
 
+  const handleDismissRejected = () => {
+    if (latestRejected) {
+      localStorage.setItem('dismissed_rejected_payment', String(latestRejected.id))
+      setLatestRejected(null)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
@@ -157,12 +185,30 @@ export default function MyInvitations() {
 
             <div className="flex items-center gap-3">
               <Link
-                href="/create-invitation"
+                href="/payment/history"
+                className="hidden md:inline-flex items-center gap-2 px-4 py-3 bg-white border-2 border-gray-200 hover:border-[#D4AF37] text-gray-700 hover:text-[#D4AF37] font-medium rounded-full transition-all hover:scale-105"
+              >
+                <History className="w-5 h-5" />
+                <span className="hidden lg:inline">Riwayat Pembayaran</span>
+              </Link>
+
+              <Link
+                href="/upgrade"
+                className="inline-flex items-center gap-2 px-4 sm:px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-full shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 transition-all hover:scale-105"
+              >
+                <Crown className="w-5 h-5" />
+                <span className="hidden sm:inline">Upgrade</span>
+              </Link>
+
+              <Link
+                href={planStatus && invitations.length >= planStatus.invitationLimit ? '/upgrade' : '/create-invitation'}
                 className="group relative inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#D4AF37] via-[#E5C158] to-[#C19B2E] text-white font-semibold rounded-full shadow-lg shadow-[#D4AF37]/40 hover:shadow-xl hover:shadow-[#D4AF37]/50 transition-all hover:scale-105 overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
                 <Plus className="w-5 h-5 relative z-10" />
-                <span className="relative z-10 hidden sm:inline">Buat Undangan Baru</span>
+                <span className="relative z-10 hidden sm:inline">
+                  {planStatus && invitations.length >= planStatus.invitationLimit ? 'Upgrade untuk Buat Undangan' : 'Buat Undangan Baru'}
+                </span>
                 <span className="relative z-10 sm:hidden">Buat</span>
               </Link>
 
@@ -188,6 +234,76 @@ export default function MyInvitations() {
             Kelola undangan pernikahan Anda
           </p>
         </div>
+
+        {/* Payment Rejected Alert */}
+        {latestRejected && (
+          <div className="mb-6 relative">
+            <div className="flex flex-col sm:flex-row items-start gap-4 p-5 bg-red-50 border-2 border-red-200 rounded-2xl">
+              <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900 mb-1">Pembayaran Anda Ditolak</p>
+                <p className="text-sm text-gray-600">
+                  Konfirmasi pembayaran paket {latestRejected.plan} tidak dapat diverifikasi.
+                  {latestRejected.admin_note && (
+                    <> <strong>Alasan:</strong> {latestRejected.admin_note}</>
+                  )}
+                </p>
+                <Link
+                  href="/upgrade"
+                  className="inline-block mt-3 text-sm font-semibold text-red-600 hover:text-red-700 underline"
+                >
+                  Coba lagi →
+                </Link>
+              </div>
+              <button
+                onClick={handleDismissRejected}
+                className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Plan Status Banner */}
+        {planStatus && (
+          <div className="mb-8">
+            {planStatus.plan === 'free' ? (
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl">
+                <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-amber-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900">Anda belum berlangganan paket</p>
+                  <p className="text-sm text-gray-600">Upgrade untuk mulai membuat undangan pernikahan digital</p>
+                </div>
+                <Link
+                  href="/upgrade"
+                  className="flex-shrink-0 px-5 py-2.5 bg-gradient-to-r from-[#D4AF37] to-[#C19B2E] text-white font-semibold rounded-full text-sm shadow-md hover:shadow-lg transition-all"
+                >
+                  Upgrade Sekarang
+                </Link>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-5 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-2xl">
+                <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Crown className="w-5 h-5 text-purple-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900">
+                    Paket {PLAN_LABELS[planStatus.plan]} Aktif
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {invitations.length} / {planStatus.invitationLimit === Infinity ? '∞' : planStatus.invitationLimit} undangan digunakan
+                    {planStatus.expiresAt && ` · Berlaku sampai ${new Date(planStatus.expiresAt).toLocaleDateString('id-ID')}`}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Empty State */}
         {invitations.length === 0 ? (

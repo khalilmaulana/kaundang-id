@@ -1,12 +1,13 @@
 'use client'
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Heart, Mail, Lock, Eye, EyeOff, User, ArrowRight, CheckCircle2, LogIn } from 'lucide-react'
 
 export default function RegisterPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -17,12 +18,14 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
+  const redirectParam = searchParams.get('redirect')
+  const loginHref = redirectParam ? `/login?redirect=${redirectParam}` : '/login'
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
 
-    // Validation
     if (password !== confirmPassword) {
       setError('Password tidak cocok')
       setLoading(false)
@@ -50,9 +53,8 @@ export default function RegisterPage() {
       setLoading(false)
     } else {
       setSuccess(true)
-      // Redirect to login after 2 seconds
       setTimeout(() => {
-        router.push('/login')
+        router.push(loginHref)
       }, 2000)
     }
   }
@@ -254,7 +256,7 @@ export default function RegisterPage() {
             <div className="text-center">
               <p className="text-gray-600">
                 Sudah punya akun?{' '}
-                <Link href="/login" className="font-semibold text-[#D4AF37] hover:text-[#C19B2E] transition-colors inline-flex items-center gap-1">
+                <Link href={loginHref} className="font-semibold text-[#D4AF37] hover:text-[#C19B2E] transition-colors inline-flex items-center gap-1">
                   Masuk di sini
                   <LogIn className="w-4 h-4" />
                 </Link>

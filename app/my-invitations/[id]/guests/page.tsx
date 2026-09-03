@@ -4,23 +4,26 @@ import { supabase } from '../../../lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import * as XLSX from 'xlsx'
-import { Heart, ArrowLeft, Upload, Download, Copy, Send, Search, Filter, Users, CheckCircle2, Eye, Clock, ExternalLink, Trash2 } from 'lucide-react'
+import QRCode from 'qrcode'
+import { Heart, ArrowLeft, Upload, Download, Copy, Send, Search, Users, CheckCircle2, Eye, Clock, QrCode, X } from 'lucide-react'
+import { getCheckinUrl } from '../../../lib/eventHelpers'
 
 export default function GuestListPage() {
   const router = useRouter()
   const params = useParams()
   const invitationId = params.id as string
-  
+
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [invitation, setInvitation] = useState<any>(null)
   const [guests, setGuests] = useState<any[]>([])
   const [importing, setImporting] = useState(false)
 
-  // Search & Filter states
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [filteredGuests, setFilteredGuests] = useState<any[]>([])
+  const [qrModalGuest, setQrModalGuest] = useState<any>(null)
+  const [qrDataUrl, setQrDataUrl] = useState<string>('')
 
   useEffect(() => {
     checkUserAndFetch()
@@ -28,17 +31,17 @@ export default function GuestListPage() {
 
   useEffect(() => {
     let result = [...guests]
-    
+
     if (searchQuery) {
-      result = result.filter(guest => 
+      result = result.filter(guest =>
         guest.name.toLowerCase().includes(searchQuery.toLowerCase())
       )
     }
-    
+
     if (filterStatus !== 'all') {
       result = result.filter(guest => guest.status === filterStatus)
     }
-    
+
     setFilteredGuests(result)
   }, [guests, searchQuery, filterStatus])
 
@@ -50,29 +53,29 @@ export default function GuestListPage() {
     }
 
     setUser(user)
-    
+
     const { data: invData } = await supabase
       .from('invitations')
       .select('*')
       .eq('id', invitationId)
       .eq('user_id', user.id)
       .single()
-    
+
     if (!invData) {
       router.push('/my-invitations')
       return
     }
-    
+
     setInvitation(invData)
-    
+
     const { data: guestData } = await supabase
       .from('guest_list')
       .select('*')
       .eq('invitation_id', invitationId)
       .order('created_at', { ascending: false })
-    
+
     if (guestData) setGuests(guestData)
-    
+
     setLoading(false)
   }
 
@@ -83,9 +86,9 @@ export default function GuestListPage() {
   const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    
+
     setImporting(true)
-    
+
     const reader = new FileReader()
     reader.onload = async (event) => {
       const data = event.target?.result
@@ -93,7 +96,7 @@ export default function GuestListPage() {
       const sheetName = workbook.SheetNames[0]
       const sheet = workbook.Sheets[sheetName]
       const rows = XLSX.utils.sheet_to_json(sheet) as any[]
-      
+
       const guestsToInsert = rows.map((row: any) => ({
         invitation_id: invitationId,
         name: row.name || row.nama || row.Name || row.Nama,
@@ -102,21 +105,21 @@ export default function GuestListPage() {
         personalized_code: generateCode(),
         status: 'pending'
       }))
-      
+
       const { error } = await supabase
         .from('guest_list')
         .insert(guestsToInsert)
-      
+
       if (error) {
         alert('Error importing: ' + error.message)
       } else {
         alert(`Berhasil import ${guestsToInsert.length} tamu!`)
         checkUserAndFetch()
       }
-      
+
       setImporting(false)
     }
-    
+
     reader.readAsBinaryString(file)
   }
 
@@ -126,12 +129,13 @@ export default function GuestListPage() {
       'Nama': guest.name,
       'No HP': guest.phone || '-',
       'Jumlah Tamu': guest.guest_count,
-      'Status': guest.status === 'pending' ? 'Belum Buka' : 
+      'Status': guest.status === 'pending' ? 'Belum Buka' :
                 guest.status === 'opened' ? 'Sudah Buka' : 'Sudah RSVP',
+      'Check-in': guest.checked_in ? 'Sudah Check-in' : 'Belum Check-in',
       'Link': `${window.location.origin}/undangan/${invitation.slug}?guest=${guest.personalized_code}`,
       'Terakhir Dibuka': guest.last_opened_at ? new Date(guest.last_opened_at).toLocaleString('id-ID') : '-'
     }))
-    
+
     const ws = XLSX.utils.json_to_sheet(exportData)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Guest List')
@@ -143,7 +147,7 @@ export default function GuestListPage() {
       const link = `${window.location.origin}/undangan/${invitation.slug}?guest=${guest.personalized_code}`
       return `${guest.name} - ${link}`
     }).join('\n')
-    
+
     navigator.clipboard.writeText(allLinks).then(() => {
       alert(`✅ ${guests.length} links berhasil di-copy!`)
     })
@@ -167,7 +171,7 @@ ${link}
 Atas kehadiran dan doa restunya, kami ucapkan terima kasih.
 
 Wassalamualaikum Wr. Wb.`
-    
+
     return encodeURIComponent(message)
   }
 
@@ -177,10 +181,33 @@ Wassalamualaikum Wr. Wb.`
       alert('Nomor HP tidak tersedia untuk tamu ini')
       return
     }
-    
+
     const message = generateWhatsAppMessage(guest)
     const waLink = `https://wa.me/62${phone}?text=${message}`
     window.open(waLink, '_blank')
+  }
+
+  const handleShowQr = async (guest: any) => {
+    const checkinUrl = getCheckinUrl(window.location.origin, invitationId, guest.personalized_code)
+    try {
+      const dataUrl = await QRCode.toDataURL(checkinUrl, {
+        width: 400,
+        margin: 2,
+        color: { dark: '#1C150A', light: '#FFFFFF' }
+      })
+      setQrDataUrl(dataUrl)
+      setQrModalGuest(guest)
+    } catch (err) {
+      alert('Gagal membuat QR code')
+    }
+  }
+
+  const handleDownloadQr = () => {
+    if (!qrDataUrl || !qrModalGuest) return
+    const link = document.createElement('a')
+    link.href = qrDataUrl
+    link.download = `QR_Checkin_${qrModalGuest.name}.png`
+    link.click()
   }
 
   if (loading) {
@@ -244,23 +271,24 @@ Wassalamualaikum Wr. Wb.`
           </button>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           {[
             { label: 'Total Tamu', value: guests.length, icon: Users, color: 'from-[#D4AF37] to-[#C19B2E]', bgColor: 'from-[#FFF8F0] to-[#FFE5D9]' },
             { label: 'Belum Buka', value: guests.filter(g => g.status === 'pending').length, icon: Clock, color: 'from-gray-500 to-gray-600', bgColor: 'from-gray-50 to-gray-100' },
             { label: 'Sudah Buka', value: guests.filter(g => g.status === 'opened').length, icon: Eye, color: 'from-blue-500 to-blue-600', bgColor: 'from-blue-50 to-blue-100' },
             { label: 'Sudah RSVP', value: guests.filter(g => g.status === 'rsvp_done').length, icon: CheckCircle2, color: 'from-green-500 to-green-600', bgColor: 'from-green-50 to-green-100' },
+            { label: 'Check-in', value: guests.filter(g => g.checked_in).length, icon: QrCode, color: 'from-purple-500 to-purple-600', bgColor: 'from-purple-50 to-purple-100' },
           ].map((stat, index) => {
             const Icon = stat.icon
             return (
               <div key={index} className="group relative">
                 <div className={`absolute -inset-0.5 bg-gradient-to-r ${stat.color} rounded-2xl opacity-0 group-hover:opacity-100 blur transition-all duration-500`}></div>
-                <div className={`relative bg-gradient-to-br ${stat.bgColor} p-6 rounded-2xl border border-gray-100`}>
-                  <div className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center shadow-lg mb-4`}>
-                    <Icon className="w-6 h-6 text-white" />
+                <div className={`relative bg-gradient-to-br ${stat.bgColor} p-5 rounded-2xl border border-gray-100`}>
+                  <div className={`w-10 h-10 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center shadow-lg mb-3`}>
+                    <Icon className="w-5 h-5 text-white" />
                   </div>
-                  <p className="text-sm text-gray-600 font-medium mb-1">{stat.label}</p>
-                  <p className="text-4xl font-bold text-gray-900">{stat.value}</p>
+                  <p className="text-xs text-gray-600 font-medium mb-1">{stat.label}</p>
+                  <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
                 </div>
               </div>
             )
@@ -269,7 +297,7 @@ Wassalamualaikum Wr. Wb.`
 
         <div className="relative">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-[#D4AF37] via-[#E5C158] to-[#A8C5A9] rounded-2xl opacity-20 blur"></div>
-          
+
           <div className="relative bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden">
             <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-5 border-b border-gray-200">
               <h2 className="text-2xl font-bold text-gray-900">Daftar Tamu ({filteredGuests.length})</h2>
@@ -315,6 +343,7 @@ Wassalamualaikum Wr. Wb.`
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">No HP</th>
                       <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase">Jumlah</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Check-in</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Actions</th>
                     </tr>
                   </thead>
@@ -339,6 +368,17 @@ Wassalamualaikum Wr. Wb.`
                           </span>
                         </td>
                         <td className="px-6 py-4">
+                          {guest.checked_in ? (
+                            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
+                              <CheckCircle2 className="w-3.5 h-3.5" /> Hadir
+                            </span>
+                          ) : (
+                            <span className="inline-flex px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">
+                              Belum
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             <button onClick={() => {
                               const link = `${window.location.origin}/undangan/${invitation.slug}?guest=${guest.personalized_code}`
@@ -349,6 +389,9 @@ Wassalamualaikum Wr. Wb.`
                             </button>
                             <button onClick={() => handleWhatsAppSingle(guest)} disabled={!guest.phone} className="p-2 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Send WhatsApp">
                               <Send className="w-4 h-4 text-green-600" />
+                            </button>
+                            <button onClick={() => handleShowQr(guest)} className="p-2 hover:bg-purple-50 rounded-lg transition-colors" title="QR Check-in">
+                              <QrCode className="w-4 h-4 text-purple-600" />
                             </button>
                           </div>
                         </td>
@@ -361,6 +404,30 @@ Wassalamualaikum Wr. Wb.`
           </div>
         </div>
       </div>
+
+      {/* QR Modal */}
+      {qrModalGuest && (
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+          onClick={() => setQrModalGuest(null)}
+        >
+          <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center relative" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setQrModalGuest(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-lg font-bold text-gray-900 mb-1">QR Check-in</h3>
+            <p className="text-sm text-gray-500 mb-4">{qrModalGuest.name}</p>
+            {qrDataUrl && <img src={qrDataUrl} alt="QR Check-in" className="w-full rounded-xl mb-4" />}
+            <p className="text-xs text-gray-400 mb-4">Scan QR ini di lokasi acara untuk menandai tamu hadir</p>
+            <button
+              onClick={handleDownloadQr}
+              className="w-full px-4 py-3 bg-gradient-to-r from-[#D4AF37] via-[#E5C158] to-[#C19B2E] text-white font-semibold rounded-xl"
+            >
+              Download QR
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

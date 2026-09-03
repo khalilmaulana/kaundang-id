@@ -825,7 +825,7 @@ export default function ClassicElegantTemplate({
                 marginBottom: '0.75rem',
                 color: '#333',
                 fontSize: '0.9rem',
-                fontWeight: 600
+                fontWeight: 600,
               }}>
                 Your Wishes
               </label>

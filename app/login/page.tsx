@@ -1,12 +1,13 @@
 'use client'
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Heart, Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -27,8 +28,10 @@ export default function LoginPage() {
       setError(loginError.message)
       setLoading(false)
     } else {
-      // Redirect to my-invitations
-      router.push('/my-invitations')
+      // Redirect back to intended destination (e.g. payment page) if present,
+      // otherwise go to my-invitations as default
+      const redirectTo = searchParams.get('redirect')
+      router.push(redirectTo ? decodeURIComponent(redirectTo) : '/my-invitations')
     }
   }
 
@@ -161,7 +164,10 @@ export default function LoginPage() {
             <div className="text-center">
               <p className="text-gray-600">
                 Belum punya akun?{' '}
-                <Link href="/register" className="font-semibold text-[#D4AF37] hover:text-[#C19B2E] transition-colors inline-flex items-center gap-1">
+                <Link
+                  href={searchParams.get('redirect') ? `/register?redirect=${searchParams.get('redirect')}` : '/register'}
+                  className="font-semibold text-[#D4AF37] hover:text-[#C19B2E] transition-colors inline-flex items-center gap-1"
+                >
                   Daftar sekarang
                   <Sparkles className="w-4 h-4" />
                 </Link>
